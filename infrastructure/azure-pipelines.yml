@@ -17,104 +17,14 @@ variables:
   TerraformBackendStorageContainer: terraformstate
   TerraformBackendStorageBlob: tf/terraform.tfstate
 
+
 stages:
-- stage: 'Terraform_Plan'
-  displayName: 'Terraform Plan'
-  jobs:
-  - job: "Terraform_Plan"
-    displayName: "Terraform Plan"
-    pool:
-      vmImage: 'ubuntu-latest'
-    steps:
-
-    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@0
-      displayName: 'Install Terraform'
-      inputs:
-        terraformVersion: $(TerraformVersion)
-
-    - bash: |
-        cp infrastructure/terraform_backend/* infrastructure/terraform
-      workingDirectory: '$(System.DefaultWorkingDirectory)'
-      displayName: 'Copy terraform backend config to terraform directory'
-
-    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV1@0
-      displayName: 'Terraform init'
-      inputs:
-        workingDirectory: '$(System.DefaultWorkingDirectory)/infrastructure/terraform'
-        backendServiceArm: '$(TerraformBackendServiceConnection)'
-        backendAzureRmResourceGroupName: $(TerraformBackendResourceGroup)
-        backendAzureRmStorageAccountName: $(TerraformBackendStorageAccount)
-        backendAzureRmContainerName: $(TerraformBackendStorageContainer)
-        backendAzureRmKey: $(TerraformBackendStorageBlob)
-
-    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV1@0
-      name: 'terraform_plan'
-      displayName: 'Terraform plan'
-      inputs:
-        command: plan
-        workingDirectory: '$(System.DefaultWorkingDirectory)/infrastructure/terraform'
-        commandOptions: -out=tfplan $(TerraformVariables)
-        environmentServiceNameAzureRM: '$(TerraformEnvironmentServiceConnection)'
-        backendServiceArm: '$(TerraformBackendServiceConnection)'
-
-    # The plan is already shown at the end of the the `terraform plan` output, but for
-    # clarity, you can enable this task to output it again separately.
-    # - bash: |
-    #    terraform show tfplan
-    #  workingDirectory: '$(System.DefaultWorkingDirectory)/infrastructure/terraform'
-    #  displayName: 'Terraform show'
-
-    # Resource providers can be > 100MB large, we don't want them in the published artifacts.
-    - bash: |
-        rm -r infrastructure/terraform/.terraform
-      workingDirectory: '$(System.DefaultWorkingDirectory)'
-      displayName: 'Delete derived terraform resources'
-
-    - task: PublishPipelineArtifact@1
-      displayName: 'Publish Pipeline Artifact'
-      inputs:
-        targetPath: $(System.DefaultWorkingDirectory)/infrastructure/terraform
-        artifact: terraform_resources
-
-- stage: 'Terraform_Apply'
-  displayName: 'Terraform Apply'
-  jobs:
-  - deployment: Staging
+- template: terraform-stages-template.yml
+  parameters:
     environment: Staging
-    displayName: "Terraform Apply"
-    pool:
-      vmImage: 'ubuntu-latest'
-    strategy:
-      runOnce:
-        deploy:
-          steps:
+    TerraformVariables: -var environment=stage
 
-          - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@0
-            displayName: 'Install Terraform'
-            inputs:
-              terraformVersion: $(TerraformVersion)
-
-          - task: DownloadPipelineArtifact@2
-            displayName: 'Download Pipeline Artifact'
-            inputs:
-              artifactName: terraform_resources
-              targetPath: '$(System.DefaultWorkingDirectory)/terraform_resources'
-
-          - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV1@0
-            displayName: 'Terraform init'
-            inputs:
-              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform_resources'
-              backendServiceArm: '$(TerraformBackendServiceConnection)'
-              backendAzureRmResourceGroupName: $(TerraformBackendResourceGroup)
-              backendAzureRmStorageAccountName: $(TerraformBackendStorageAccount)
-              backendAzureRmContainerName: $(TerraformBackendStorageContainer)
-              backendAzureRmKey: $(TerraformBackendStorageBlob)
-
-          - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV1@0
-            displayName: 'Terraform apply'
-            inputs:
-              command: apply
-              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform_resources'
-              commandOptions: '-auto-approve tfplan'
-              environmentServiceNameAzureRM: '$(TerraformEnvironmentServiceConnection)'
-              backendServiceArm: '$(TerraformBackendServiceConnection)'
+- template: terraform-stages-template.yml
+  parameters:
+    environment: QA
+    TerraformVariables: -var environment=qa

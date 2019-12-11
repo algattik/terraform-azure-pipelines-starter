@@ -18,6 +18,58 @@ When the project is run in Azure DevOps, however, the pipeline adds the
 `infrastructure/terraform_backend/backend.tf` to the `infrastructure/terraform` 
 directory to enable the Azure Storage shared backend for additional resiliency.
 
+## Azure DevOps pipeline
+
+Install the [Terraform extension for Azure DevOps](https://marketplace.visualstudio.com/items?itemName=ms-devlabs.custom-terraform-tasks).
+
+As of December 2019, there is no support for stage gates in Azure DevOps multi-stage pipelines, but
+*deployment environments* provide a basic mechanism for stage approvals.
+
+Create an environment with no resources. Name it `Staging`.
+
+![create environment](/docs/images/create_environment.png)
+
+Define environment approvals. If you want to allow anyone out of a group a people to be able to individually approve, add a group.
+
+![create environment_approval1](/docs/images/create_environment_approval1.png)
+
+![create environment approval2](/docs/images/create_environment_approval2.png)
+
+![create environment approval3](/docs/images/create_environment_approval3.png)
+
+![environment approval](/docs/images/environment_approval.png)
+
+Repeat those steps for an environment named `QA`.
+
+Create a Service Connection of type Azure Resource Manager at subscription scope. Name the Service Connection `Terraform`.
+Allow all pipelines to use the connection.
+
+In your subscription, create a storage account and a storage container named `terraformstate` within the storage account.
+
+In `infrastructure/azure-pipelines.yml`, update the `TerraformBackendStorageAccount` name to your storage account name.
+
+Create a build pipeline referencing `infrastructure/azure-pipelines.yml`.
+
+As you run the pipeline, after running `terraform plan`, the next stage will be waiting for your approval.
+
+![pipeline stage waiting](/docs/images/pipeline_stage_waiting.png)
+
+Review the detailed plan to ensure no critical resources or data will be lost.
+
+![terraform plan output](/docs/images/terraform_plan_output.png)
+
+Approve or reject the deployment.
+
+![stage approval waiting](/docs/images/stage_approval_waiting.png)
+
+The pipeline will proceed to `terraform apply`.
+
+At this stage you will have a new resource group deployed named `rg-starterterraform-stage-main`. 
+
+The pipeline will then proceed in the same manner for the `QA` environment.
+
+![pipeline completed](/docs/images/pipeline_completed.png)
+
 ## Local development
 
 In local development, no backend is configured so a local backend is used.
@@ -130,54 +182,11 @@ subscription_id = xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 
 At this stage you will have a new resource group deployed named `rg-starterterraform-dev-main`. 
 
-## Azure DevOps pipeline
-
-As of December 2019, there is no support for stage gates in Azure DevOps multi-stage pipelines, but
-*deployment environments* provide a basic mechanism for stage approvals.
-
-Create an environment with no resources. Name it `Staging`.
-
-![create environment](/docs/images/create_environment.png)
-
-Define environment approvals.
-
-![create environment_approval1](/docs/images/create_environment_approval1.png)
-
-![create environment approval2](/docs/images/create_environment_approval2.png)
-
-![create environment approval3](/docs/images/create_environment_approval3.png)
-
-![environment approval](/docs/images/environment_approval.png)
-
-Create a Service Connection of type Azure Resource Manager at subscription scope. Name the Service Connection `Terraform`.
-Allow all pipelines to use the connection.
-
-In your subscription, create a storage account and a storage container named `terraformstate` within the storage account.
-
-In `infrastructure/azure-pipelines.yml`, update the `TerraformBackendStorageAccount` name to your storage account name.
-
-Create a build pipeline referencing `infrastructure/azure-pipelines.yml`.
-
-As you run the pipeline, after running `terraform plan`, the next stage will be waiting for your approval.
-
-![pipeline stage waiting](/docs/images/pipeline_stage_waiting.png)
-
-Review the detailed plan to ensure no critical resources or data will be lost.
-
-![terraform plan output](/docs/images/terraform_plan_output.png)
-
-Approve or reject the deployment.
-
-![stage approval waiting](/docs/images/stage_approval_waiting.png)
-
-The pipeline will proceed to `terraform apply`.
-
-![pipeline completed](/docs/images/pipeline_completed.png)
-
-At this stage you will have a new resource group deployed named `rg-starterterraform-stage-main`. 
-
 # Next steps
 
-* The pipeline should be adapted to skip deployment if there are no changes.
-  The output of `terraform plan -detailed-exitcode` might be used for this.
-* You can extend the pipeline to additional environments, such as QA and Prod.
+* It's not currently possible to skip approval and deployment if there are no
+  changes in the Terraform plan, because of limitations in multi-stage
+  pipelines (stages cannot be conditioned on the outputs of previous stages).
+  You could cancel the pipeline (through the REST API) in that case, but that
+  would prevent extending the pipeline to include activities beyond Terraform.
+* You can of course adapt the pipeline to other environments, such as Prod.
