@@ -15,7 +15,7 @@ stages:
   - job: "Terraform_Plan"
     displayName: "Terraform Plan"
     pool:
-      vmImage: 'ubuntu-latest'
+      vmImage: 'ubuntu-16.04'
     steps:
 
     - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@0
@@ -44,22 +44,17 @@ stages:
       inputs:
         command: plan
         workingDirectory: '$(System.DefaultWorkingDirectory)/infrastructure/terraform'
-        commandOptions: -out=tfplan ${{ parameters.TerraformVariables }}
+        commandOptions: ${{ parameters.TerraformVariables }}
         environmentServiceNameAzureRM: '${{ parameters.TerraformEnvironmentServiceConnection }}'
         backendServiceArm: '${{ parameters.TerraformBackendServiceConnection }}'
 
-    # The plan is already shown at the end of the the `terraform plan` output, but for
-    # clarity, you can enable this task to output it again separately.
-    # - bash: |
-    #    terraform show tfplan
-    #  workingDirectory: '$(System.DefaultWorkingDirectory)/infrastructure/terraform'
-    #  displayName: 'Terraform show'
-
     # Resource providers can be > 100MB large, we don't want them in the published artifacts.
     - bash: |
-        rm -r infrastructure/terraform/.terraform
-      workingDirectory: '$(System.DefaultWorkingDirectory)'
-      displayName: 'Delete derived terraform resources'
+        set -eux
+        cp '$(terraform_plan.jsonPlanFilePath)' .
+        rm -r .terraform
+      workingDirectory: '$(System.DefaultWorkingDirectory)/infrastructure/terraform'
+      displayName: 'Copy plan and delete derived terraform resources'
 
     - task: PublishPipelineArtifact@1
       displayName: 'Publish Pipeline Artifact'
@@ -74,7 +69,7 @@ stages:
     environment: ${{ parameters.environment }}
     displayName: "Terraform Apply"
     pool:
-      vmImage: 'ubuntu-latest'
+      vmImage: 'ubuntu-16.04'
     strategy:
       runOnce:
         deploy:
