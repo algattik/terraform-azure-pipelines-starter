@@ -10,17 +10,19 @@ resource "azurerm_resource_group" "main" {
   location = var.location
 }
 
-# Sample Resource
-# NB: You should organize your resources in Terraform modules.
+data "azurerm_key_vault" "keyvault" {
+  name = var.keyvault_name
+  resource_group_name = var.keyvault_rg
+}
+ 
+# Sample Resources
 
-resource "azurerm_sql_server" "example" {
-  name                         = "algattik01sqlserver"
-  resource_group_name          = azurerm_resource_group.main.name
-  location                     = azurerm_resource_group.main.location
-  version                      = "12.0"
-  administrator_login          = "mradministrator"
-  administrator_login_password = "thisIsDog11"
+module "sqlserver" {
+  source = "./sqlserver"
+  environment = var.environment
+  resource_group = azurerm_resource_group.main.name
+  location = azurerm_resource_group.main.location
+  key_vault_id = data.azurerm_key_vault.keyvault.id
 }
 
-# Add additional resources / modules...
-
+# Add additional modules...
