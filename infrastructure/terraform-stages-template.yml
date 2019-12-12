@@ -123,16 +123,6 @@ stages:
               backendAzureRmContainerName: ${{ parameters.TerraformBackendStorageContainer }}
               backendAzureRmKey: ${{ parameters.environment }}.tfstate
 
-          - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV1@0
-            name: 'terraform_plan'
-            displayName: 'Terraform plan'
-            inputs:
-              command: plan
-              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform_resources'
-              commandOptions: -out tfplan -var environment=${{ parameters.environment}} ${{ parameters.TerraformVariables }}
-              environmentServiceNameAzureRM: '${{ parameters.TerraformEnvironmentServiceConnection }}'
-              backendServiceArm: '${{ parameters.TerraformBackendServiceConnection }}'
-
           - task: AzureCLI@1
             inputs:
               azureSubscription: '${{ parameters.TerraformEnvironmentServiceConnection }}'
