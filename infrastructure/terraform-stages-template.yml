@@ -7,6 +7,7 @@ parameters:
   TerraformBackendResourceGroup: terraform
   TerraformBackendStorageAccount: terraformstarter
   TerraformBackendStorageContainer: terraformstate
+  TerraformBackendLocation: North Europe
 
 stages:
 - stage: 'Terraform_Plan_${{ parameters.environment }}'
@@ -17,6 +18,22 @@ stages:
     pool:
       vmImage: 'ubuntu-latest'
     steps:
+
+    - task: AzureCLI@1
+      inputs:
+        azureSubscription: '$(TerraformBackendServiceConnection)'
+        scriptLocation: inlineScript
+        inlineScript: |
+          set -eux  # fail on error
+          time az configure --defaults group='${{ parameters.TerraformBackendResourceGroup }}' location='${{ parameters.TerraformBackendLocation }}'
+          time az group create -n '${{ parameters.TerraformBackendResourceGroup }}' -o table
+          time az storage account create  -n '${{ parameters.TerraformBackendStorageAccount }}' -o table
+          time az storage container create -a '${{ parameters.TerraformBackendStorageAccount }}' -a '${{ parameters.TerraformBackendStorageContainer }}' -o table
+          time az keyvault create -n '${{ parameters.TerraformBackendKeyVault }}' -o table
+          time az keyvault secret set --vault-name -n '${{ parameters.TerraformBackendKeyVault }}' -n "sql_password" --value "Str0ng!Passw0wrd"
+          #time az keyvault set-policy --name "Terraform" --spn "$servicePrincipalId" --secret-permissions get list
+        addSpnToEnvironment: true
+      displayName: 'Publish Azure Machine Learning Pipeline'
 
     - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@0
       displayName: 'Install Terraform'
