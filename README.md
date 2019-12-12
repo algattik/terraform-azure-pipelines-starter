@@ -18,17 +18,18 @@ When the project is run in Azure DevOps, however, the pipeline adds the
 `infrastructure/terraform_backend/backend.tf` to the `infrastructure/terraform` 
 directory to enable the Azure Storage shared backend for additional resiliency.
 
-## Secrets and state management
+## Variables, secrets and state management
 
-For simplicity, to demonstrate one approach to secrets management, the template pipeline
-generates a random password (per stage) for the SQL Server instance, stored in a Key Vault
-created by the pipeline and consumed by Terraform. You can adapt this to suit your
-lifecycle. You might want to manually enter credentials to external resources in the Key Vault
-or inject them via the pipeline. Randomly generated secrets may be generated within
-Terraform itself.
+Variables can be injected using `-var key=value` syntax in the `TerraformVariables` parameter.
+The pipeline demonstrates this by adding a custom tag named `department` to the
+created resource group, with distinct values in staging and QA.
 
-You can inject secrets using `-var key=value` syntax in the `TerraformVariables` parameter.
-Those secrets could come from Key Vault-backed Azure DevOps variables.
+To demonstrate one approach to secrets management, the Terraform configuration
+generates a random password (per stage) for the SQL Server instance, stored in
+Terraform state.
+You can adapt this to suit your lifecycle.
+You might want to read credentials from an externally managed Key Vault
+or inject them via pipeline variables.
 
 Rather than passing a Terraform plan between stages (which would contain clear-text secrets),
 the pipeline performs `terraform plan` again before applying changes and verifies that
