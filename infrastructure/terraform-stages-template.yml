@@ -57,16 +57,6 @@ stages:
         backendAzureRmContainerName: ${{ parameters.TerraformBackendStorageContainer }}
         backendAzureRmKey: ${{ parameters.environment }}.tfstate
 
-    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV1@0
-      name: 'terraform_plan'
-      displayName: 'Terraform plan'
-      inputs:
-        command: plan
-        workingDirectory: '$(System.DefaultWorkingDirectory)/infrastructure/terraform'
-        commandOptions: -out tfplan -var environment=${{ parameters.environment}} ${{ parameters.TerraformVariables }}
-        environmentServiceNameAzureRM: '${{ parameters.TerraformEnvironmentServiceConnection }}'
-        backendServiceArm: '${{ parameters.TerraformBackendServiceConnection }}'
-
     # Workaround for https://github.com/microsoft/azure-pipelines-extensions/issues/747
     - task: AzureCLI@1
       inputs:
@@ -107,7 +97,7 @@ stages:
   displayName: 'Apply ${{ parameters.displayName }}'
   jobs:
   - deployment: ${{ parameters.environment }}
-    environment: ${{ parameters.environment }}
+    environment: ${{ parameters.displayName }}
     displayName: "Terraform Apply"
     pool:
       vmImage: 'ubuntu-latest'
