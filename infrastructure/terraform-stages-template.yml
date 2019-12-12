@@ -57,7 +57,7 @@ stages:
         backendAzureRmContainerName: ${{ parameters.TerraformBackendStorageContainer }}
         backendAzureRmKey: ${{ parameters.environment }}.tfstate
 
-    # Workaround for https://github.com/microsoft/azure-pipelines-extensions/issues/747
+    # Using AzureCLI instead of Terraform extension because of https://github.com/microsoft/azure-pipelines-extensions/issues/747
     - task: AzureCLI@1
       inputs:
         azureSubscription: '${{ parameters.TerraformEnvironmentServiceConnection }}'
@@ -68,24 +68,20 @@ stages:
           export ARM_CLIENT_SECRET="$servicePrincipalKey"
           export ARM_SUBSCRIPTION_ID=$(az account show --query id -o tsv)
           export ARM_TENANT_ID="$tenantId"
-          # terraform plan -detailed-exitcode exit codes:
-          # 0 - Succeeded, diff is empty (no changes)
-          # 1 - Errored
-          # 2 - Succeeded, there is a diff
-          if ! terraform plan -detailed-exitcode -out=tfplan  -var environment=${{ parameters.environment }} ${{ parameters.TerraformVariables }}; then
-           if [ $? -eq 1 ]; then
-            exit $?
-           fi
-          fi
-          # Resource providers can be > 100MB large, we don't want them in the published artifacts.
-          terraform show -no-color tfplan > plan.txt
-          # Remove terraform plan from published artifacts, as it contains clear-text secrets
-          rm tfplan
-          # Resource providers can be > 100MB large, we don't want them in the published artifacts.
-          rm -r .terraform
+          terraform plan -detailed-exitcode -out=tfplan  -var environment=${{ parameters.environment }} ${{ parameters.TerraformVariables }}
         workingDirectory: '$(System.DefaultWorkingDirectory)/infrastructure/terraform'
         addSpnToEnvironment: true
       displayName: 'Terraform plan'
+
+    - bash: |
+        # Save a human-friendly version of the plan with passwords hidden
+        terraform show -no-color tfplan > plan.txt
+        # Remove terraform plan from published artifacts, as it contains clear-text secrets
+        rm tfplan
+        # Resource providers can be > 100MB large, we don't want them in the published artifacts.
+        rm -r .terraform
+      workingDirectory: '$(System.DefaultWorkingDirectory)/terraform_resources'
+      displayName: 'Save plan text representation'
 
     - task: PublishPipelineArtifact@1
       displayName: 'Publish Pipeline Artifact'
@@ -136,6 +132,21 @@ stages:
               commandOptions: -out tfplan -var environment=${{ parameters.environment}} ${{ parameters.TerraformVariables }}
               environmentServiceNameAzureRM: '${{ parameters.TerraformEnvironmentServiceConnection }}'
               backendServiceArm: '${{ parameters.TerraformBackendServiceConnection }}'
+
+          - task: AzureCLI@1
+            inputs:
+              azureSubscription: '${{ parameters.TerraformEnvironmentServiceConnection }}'
+              scriptLocation: inlineScript
+              inlineScript: |
+                set -eu
+                export ARM_CLIENT_ID="$servicePrincipalId"
+                export ARM_CLIENT_SECRET="$servicePrincipalKey"
+                export ARM_SUBSCRIPTION_ID=$(az account show --query id -o tsv)
+                export ARM_TENANT_ID="$tenantId"
+                terraform plan -detailed-exitcode -out=tfplan  -var environment=${{ parameters.environment }} ${{ parameters.TerraformVariables }}
+              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform_resources'
+              addSpnToEnvironment: true
+            displayName: 'Terraform plan'
 
           - bash: |
               set -eux  # ensure pipeline stops if terraform fails or diff reports a difference
