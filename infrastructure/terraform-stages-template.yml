@@ -19,7 +19,7 @@ stages:
       vmImage: 'ubuntu-latest'
     steps:
 
-    - task: AzureCLI@1
+    - task: AzureCLI@2
       inputs:
         azureSubscription: '$(TerraformBackendServiceConnection)'
         scriptLocation: inlineScript
