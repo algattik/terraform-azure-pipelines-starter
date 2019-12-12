@@ -20,6 +20,13 @@ directory to enable the Azure Storage shared backend for additional resiliency.
 
 ## Secrets and state management
 
+For simplicity, to demonstrate one approach to secrets management, the template pipeline
+generates a random password (per stage) for the SQL Server instance, stored in a Key Vault
+created by the pipeline and consumed by Terraform. You can adapt this to suit your
+lifecycle. You might want to manually enter credentials to external resources in the Key Vault
+or inject them via the pipeline. Randomly generated secrets may be generated within
+Terraform itself.
+
 You can inject secrets using `-var key=value` syntax in the `TerraformVariables` parameter.
 Those secrets could come from Key Vault-backed Azure DevOps variables.
 
@@ -56,7 +63,9 @@ Repeat those steps for an environment named `QA`.
 Create a Service Connection of type Azure Resource Manager at subscription scope. Name the Service Connection `Terraform`.
 Allow all pipelines to use the connection.
 
-In `infrastructure/azure-pipelines.yml`, update the `TerraformBackendStorageAccount` name to a unique storage account name. The pipeline will create the storage account.
+In `infrastructure/azure-pipelines.yml`, update the `TerraformBackendStorageAccount` name to a globally unique storage account name.
+The pipeline will create the storage account.
+Similarly, set the `TerraformBackendKeyVault` name to a globally unique Key Vault name.
 
 Create a build pipeline referencing `infrastructure/azure-pipelines.yml`.
 
