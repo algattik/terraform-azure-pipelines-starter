@@ -80,7 +80,7 @@ stages:
         rm tfplan
         # Resource providers can be > 100MB large, we don't want them in the published artifacts.
         rm -r .terraform
-      workingDirectory: '$(System.DefaultWorkingDirectory)/terraform_resources'
+      workingDirectory: '$(System.DefaultWorkingDirectory)/infrastructure/terraform'
       displayName: 'Save plan text representation'
 
     - task: PublishPipelineArtifact@1
