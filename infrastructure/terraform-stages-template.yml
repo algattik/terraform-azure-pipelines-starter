@@ -21,7 +21,7 @@ stages:
 
     - task: AzureCLI@2
       inputs:
-        azureSubscription: '$(TerraformBackendServiceConnection)'
+        azureSubscription: $(TerraformBackendServiceConnection)
         scriptLocation: inlineScript
         inlineScript: |
           set -eux  # fail on error
