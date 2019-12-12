@@ -51,7 +51,7 @@ stages:
     # Resource providers can be > 100MB large, we don't want them in the published artifacts.
     - bash: |
         set -eux
-        cp '$(terraform_plan.jsonPlanFilePath)' .
+        cp '$(terraform_plan.jsonPlanFilePath)' plan.json
         rm -r .terraform
       workingDirectory: '$(System.DefaultWorkingDirectory)/infrastructure/terraform'
       displayName: 'Copy plan and delete derived terraform resources'
