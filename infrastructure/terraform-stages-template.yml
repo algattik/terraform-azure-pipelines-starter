@@ -15,7 +15,7 @@ stages:
   - job: "Terraform_Plan"
     displayName: "Terraform Plan"
     pool:
-      vmImage: 'ubuntu-16.04'
+      vmImage: 'ubuntu-latest'
     steps:
 
     - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@0
@@ -69,7 +69,7 @@ stages:
     environment: ${{ parameters.environment }}
     displayName: "Terraform Apply"
     pool:
-      vmImage: 'ubuntu-16.04'
+      vmImage: 'ubuntu-latest'
     strategy:
       runOnce:
         deploy:
