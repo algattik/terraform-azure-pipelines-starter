@@ -9,7 +9,3 @@ variable "resource_group" {
 variable "location" {
   type    = string
 }
-
-variable "key_vault_id" {
-  type    = string
-}

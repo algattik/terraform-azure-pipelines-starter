@@ -13,11 +13,6 @@ resource "azurerm_resource_group" "main" {
   }
 }
 
-data "azurerm_key_vault" "keyvault" {
-  name = var.keyvault_name
-  resource_group_name = var.keyvault_rg
-}
- 
 # Sample Resources
 
 module "sqlserver" {
@@ -25,7 +20,6 @@ module "sqlserver" {
   environment = var.environment
   resource_group = azurerm_resource_group.main.name
   location = azurerm_resource_group.main.location
-  key_vault_id = data.azurerm_key_vault.keyvault.id
 }
 
 # Add additional modules...

@@ -1,6 +1,11 @@
-data "azurerm_key_vault_secret" "sql_password" {
-  name = "${var.environment}-sql-password"
-  key_vault_id = var.key_vault_id
+resource "random_password" "sql" {
+  length = 16
+  special = true
+  override_special = "!@#$%&*()-_=+[]:?"
+  min_upper = 1
+  min_lower = 1
+  min_numeric = 1
+  min_special = 1
 }
 
 resource "azurerm_sql_server" "example" {
@@ -8,6 +13,6 @@ resource "azurerm_sql_server" "example" {
   resource_group_name          = var.resource_group
   location                     = var.location
   version                      = "12.0"
-  administrator_login          = "mradministrator"
-  administrator_login_password = data.azurerm_key_vault_secret.sql_password.value
+  administrator_login          = "sa"
+  administrator_login_password = random_password.sql.result
 }
