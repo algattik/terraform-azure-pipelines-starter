@@ -68,7 +68,7 @@ stages:
           export ARM_CLIENT_SECRET="$servicePrincipalKey"
           export ARM_SUBSCRIPTION_ID=$(az account show --query id -o tsv)
           export ARM_TENANT_ID="$tenantId"
-          terraform plan -detailed-exitcode -out=tfplan  -var environment=${{ parameters.environment }} ${{ parameters.TerraformVariables }}
+          terraform plan -out=tfplan  -var environment=${{ parameters.environment }} ${{ parameters.TerraformVariables }}
         workingDirectory: '$(System.DefaultWorkingDirectory)/infrastructure/terraform'
         addSpnToEnvironment: true
       displayName: 'Terraform plan'
@@ -143,7 +143,7 @@ stages:
                 export ARM_CLIENT_SECRET="$servicePrincipalKey"
                 export ARM_SUBSCRIPTION_ID=$(az account show --query id -o tsv)
                 export ARM_TENANT_ID="$tenantId"
-                terraform plan -detailed-exitcode -out=tfplan  -var environment=${{ parameters.environment }} ${{ parameters.TerraformVariables }}
+                terraform plan -out=tfplan  -var environment=${{ parameters.environment }} ${{ parameters.TerraformVariables }}
               workingDirectory: '$(System.DefaultWorkingDirectory)/terraform_resources'
               addSpnToEnvironment: true
             displayName: 'Terraform plan'
