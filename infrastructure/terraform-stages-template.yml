@@ -33,13 +33,13 @@ stages:
           time az storage container create --account-name '${{ parameters.TerraformBackendStorageAccount }}' -n '${{ parameters.TerraformBackendStorageContainer }}' -o none
           vault='${{ parameters.TerraformBackendKeyVault }}'
           time az keyvault create -n "$vault" -o none
-          time az keyvault set-policy -n "$vault" --spn "$servicePrincipalId" --secret-permissions get list -o none
           exists=$(az keyvault secret list-versions --vault-name "$vault" -n "${{ parameters.environment }}-sql-password" --query 'length([])')
           if [ "$exists" == "0" ]; then
             set +x  # do not echo secret
             sqlPassword=$(openssl rand -base64 24)
             az keyvault secret set --vault-name "$vault" -n "${{ parameters.environment }}-sql-password" --value "$sqlPassword" -o none
           fi
+          time az keyvault set-policy -n "$vault" --spn "$servicePrincipalId" --secret-permissions get list -o none
         addSpnToEnvironment: true
       displayName: 'Set up backend and Key Vault'
 
