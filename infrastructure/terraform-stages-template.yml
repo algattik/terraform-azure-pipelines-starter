@@ -31,7 +31,7 @@ stages:
           time az storage account create  -n '${{ parameters.TerraformBackendStorageAccount }}' -o none
           time az storage container create --account-name '${{ parameters.TerraformBackendStorageAccount }}' -n '${{ parameters.TerraformBackendStorageContainer }}' -o none
         addSpnToEnvironment: true
-      displayName: 'Set up backend and Key Vault'
+      displayName: 'Set up backend'
 
     - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@0
       displayName: 'Install Terraform'
