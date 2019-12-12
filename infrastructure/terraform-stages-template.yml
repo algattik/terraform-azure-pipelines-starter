@@ -28,7 +28,7 @@ stages:
           time az configure --defaults group='${{ parameters.TerraformBackendResourceGroup }}' location='${{ parameters.TerraformBackendLocation }}'
           time az group create -n '${{ parameters.TerraformBackendResourceGroup }}' -o table
           time az storage account create  -n '${{ parameters.TerraformBackendStorageAccount }}' -o table
-          time az storage container create -a '${{ parameters.TerraformBackendStorageAccount }}' -n '${{ parameters.TerraformBackendStorageContainer }}' -o table
+          time az storage container create --account-name '${{ parameters.TerraformBackendStorageAccount }}' -n '${{ parameters.TerraformBackendStorageContainer }}' -o table
           time az keyvault create -n '${{ parameters.TerraformBackendKeyVault }}' -o table
           time az keyvault secret set --vault-name -n '${{ parameters.TerraformBackendKeyVault }}' -n "sql_password" --value "Str0ng!Passw0wrd"
           #time az keyvault set-policy --name "Terraform" --spn "$servicePrincipalId" --secret-permissions get list
