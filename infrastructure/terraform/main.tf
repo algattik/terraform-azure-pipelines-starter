@@ -8,6 +8,9 @@
 resource "azurerm_resource_group" "main" {
   name     = "rg-${var.appname}-${var.environment}-main"
   location = var.location
+  tags     = {
+    department = var.department
+  }
 }
 
 data "azurerm_key_vault" "keyvault" {
