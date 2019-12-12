@@ -75,11 +75,10 @@ stages:
           echo "Terraform plan failed."
           exit 1
         fi
-        ls -la $(terraform_plan.jsonPlanFilePath)
         terraform show -no-color tfplan > plan.txt
         rm -r tfplan .terraform
       workingDirectory: '$(System.DefaultWorkingDirectory)/infrastructure/terraform'
-      displayName: 'Copy plan and delete derived terraform resources'
+      displayName: 'Check plan and delete derived terraform resources'
 
     - task: PublishPipelineArtifact@1
       displayName: 'Publish Pipeline Artifact'
