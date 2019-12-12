@@ -44,17 +44,24 @@ stages:
       inputs:
         command: plan
         workingDirectory: '$(System.DefaultWorkingDirectory)/infrastructure/terraform'
-        commandOptions: ${{ parameters.TerraformVariables }}
+        commandOptions: -out tfplan ${{ parameters.TerraformVariables }}
         environmentServiceNameAzureRM: '${{ parameters.TerraformEnvironmentServiceConnection }}'
         backendServiceArm: '${{ parameters.TerraformBackendServiceConnection }}'
 
     # Resource providers can be > 100MB large, we don't want them in the published artifacts.
     - bash: |
         set -eux
-        cp '$(terraform_plan.jsonPlanFilePath)' plan.json
-        rm -r .terraform
+        terraform show -no-color tfplan > plan.txt
+        rm -r tfplan .terraform
       workingDirectory: '$(System.DefaultWorkingDirectory)/infrastructure/terraform'
       displayName: 'Copy plan and delete derived terraform resources'
+
+    # The plan is already shown at the end of the the `terraform plan` output, but for
+    # clarity, you can enable this task to output it again separately.
+    # - bash: |
+    #    terraform show tfplan
+    #  workingDirectory: '$(System.DefaultWorkingDirectory)/infrastructure/terraform'
+    #  displayName: 'Terraform show'
 
     - task: PublishPipelineArtifact@1
       displayName: 'Publish Pipeline Artifact'
