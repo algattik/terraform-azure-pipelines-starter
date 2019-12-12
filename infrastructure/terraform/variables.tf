@@ -18,8 +18,8 @@ variable "appname" {
 
 variable "environment" {
   type    = string
-  description = "Environment name: 'dev' or 'stage'"
-  default = "dev"
+  description = "Environment name, e.g. 'devel' or 'stage'"
+  default = "devel"
 }
 
 variable "location" {
