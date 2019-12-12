@@ -7,8 +7,8 @@ This project can be used as a starter for Azure Pipelines deploying resources on
 It includes a multi-stage pipeline allowing to manually review and approve infrastructure
 changes before they are deployed.
 
-The Terraform definition only deploys an empty resource group. You can extend the definition
-with your custom infrastructure such as Web Apps.
+The Terraform definition only deploys a resource group and an empty SQL Server.
+You can extend the definition with your custom infrastructure, such as Web Apps.
 
 The project can be used in local development without a remote Terraform state backend.
 This allows quickly iterating while developing the Terraform configuration, and 
@@ -17,6 +17,18 @@ good security practices.
 When the project is run in Azure DevOps, however, the pipeline adds the
 `infrastructure/terraform_backend/backend.tf` to the `infrastructure/terraform` 
 directory to enable the Azure Storage shared backend for additional resiliency.
+
+## Secrets and state management
+
+You can inject secrets using `-var key=value` syntax in the `TerraformVariables` parameter.
+Those secrets could come from Key Vault-backed Azure DevOps variables.
+
+Rather than passing a Terraform plan between stages (which would contain clear-text secrets),
+the pipeline performs `terraform plan` again before applying changes and verifies that
+a textual representation of the plan (not including secrets values) is unchanged.
+
+The Terraform state is managed in a Azure Storage backend. Note that this backend contains
+secrets in cleartext.
 
 ## Azure DevOps pipeline
 
@@ -58,6 +70,12 @@ Review the detailed plan to ensure no critical resources or data will be lost.
 
 ![terraform plan output](/docs/images/terraform_plan_output.png)
 
+You can also review the plan and terraform configuration files by navigating to Pipeline Artifacts (rightmost column in the table below).
+
+![pipeline artifacts](/docs/images/pipeline_artifacts.png)
+
+![pipeline artifacts detail](/docs/images/pipeline_artifacts_detail.png)
+
 Approve or reject the deployment.
 
 ![stage approval waiting](/docs/images/stage_approval_waiting.png)
@@ -69,6 +87,11 @@ At this stage you will have a new resource group deployed named `rg-starterterra
 The pipeline will then proceed in the same manner for the `QA` environment.
 
 ![pipeline completed](/docs/images/pipeline_completed.png)
+
+If any changes have been performed on the infrastructure between the Plan and Apply stages, the pipeline will fail.
+You can rerun the Plan stage directly in the pipeline view to produce an updated plan.
+
+![plan changed](/docs/images/plan_changed.png)
 
 ## Local development
 
