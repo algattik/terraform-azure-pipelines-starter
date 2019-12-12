@@ -70,6 +70,7 @@ stages:
     # Resource providers can be > 100MB large, we don't want them in the published artifacts.
     - bash: |
         set -eux
+        # Workaround for https://github.com/microsoft/azure-pipelines-extensions/issues/747
         if ! test -s $(terraform_plan.jsonPlanFilePath); then
           echo "Terraform plan failed."
           exit 1
