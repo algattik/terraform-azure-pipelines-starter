@@ -1,22 +1,37 @@
 parameters:
-  environment: Staging
-  TerraformVersion: 0.12.18
-  TerraformVariables: -var environment=stage
+  displayName: Staging
+  environment: stage
+  TerraformVersion: 0.12.17
+  TerraformVariables: ''
   TerraformBackendServiceConnection: Terraform
   TerraformEnvironmentServiceConnection: Terraform
   TerraformBackendResourceGroup: terraform
-  TerraformBackendStorageAccount: terraformstarter
+  TerraformBackendStorageAccount: terraformstarterstate
   TerraformBackendStorageContainer: terraformstate
+  TerraformBackendLocation: North Europe
 
 stages:
 - stage: 'Terraform_Plan_${{ parameters.environment }}'
-  displayName: 'Plan ${{ parameters.environment }}'
+  displayName: 'Plan ${{ parameters.displayName }}'
   jobs:
   - job: "Terraform_Plan"
     displayName: "Terraform Plan"
     pool:
       vmImage: 'ubuntu-latest'
     steps:
+
+    - task: AzureCLI@1
+      inputs:
+        azureSubscription: ${{ parameters.TerraformBackendServiceConnection }}
+        scriptLocation: inlineScript
+        inlineScript: |
+          set -eux  # fail on error
+          time az configure --defaults group='${{ parameters.TerraformBackendResourceGroup }}' location='${{ parameters.TerraformBackendLocation }}'
+          time az group create -n '${{ parameters.TerraformBackendResourceGroup }}' -o none
+          time az storage account create  -n '${{ parameters.TerraformBackendStorageAccount }}' -o none
+          time az storage container create --account-name '${{ parameters.TerraformBackendStorageAccount }}' -n '${{ parameters.TerraformBackendStorageContainer }}' -o none
+        addSpnToEnvironment: true
+      displayName: 'Set up backend and Key Vault'
 
     - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@0
       displayName: 'Install Terraform'
@@ -38,23 +53,31 @@ stages:
         backendAzureRmContainerName: ${{ parameters.TerraformBackendStorageContainer }}
         backendAzureRmKey: ${{ parameters.environment }}.tfstate
 
-    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV1@0
-      name: 'terraform_plan'
-      displayName: 'Terraform plan'
+    # Using AzureCLI instead of Terraform extension because of https://github.com/microsoft/azure-pipelines-extensions/issues/747
+    - task: AzureCLI@1
       inputs:
-        command: plan
+        azureSubscription: '${{ parameters.TerraformEnvironmentServiceConnection }}'
+        scriptLocation: inlineScript
+        inlineScript: |
+          set -eu
+          export ARM_CLIENT_ID="$servicePrincipalId"
+          export ARM_CLIENT_SECRET="$servicePrincipalKey"
+          export ARM_SUBSCRIPTION_ID=$(az account show --query id -o tsv)
+          export ARM_TENANT_ID="$tenantId"
+          terraform plan -out=tfplan -var environment=${{ parameters.environment }} ${{ parameters.TerraformVariables }}
         workingDirectory: '$(System.DefaultWorkingDirectory)/infrastructure/terraform'
-        commandOptions: -out tfplan ${{ parameters.TerraformVariables }}
-        environmentServiceNameAzureRM: '${{ parameters.TerraformEnvironmentServiceConnection }}'
-        backendServiceArm: '${{ parameters.TerraformBackendServiceConnection }}'
+        addSpnToEnvironment: true
+      displayName: 'Terraform plan'
 
-    # Resource providers can be > 100MB large, we don't want them in the published artifacts.
     - bash: |
-        set -eux
+        # Save a human-friendly version of the plan with passwords hidden
         terraform show -no-color tfplan > plan.txt
-        rm -r tfplan .terraform
+        # Remove terraform plan from published artifacts, as it contains clear-text secrets
+        rm tfplan
+        # Resource providers can be > 100MB large, we don't want them in the published artifacts.
+        rm -r .terraform
       workingDirectory: '$(System.DefaultWorkingDirectory)/infrastructure/terraform'
-      displayName: 'Copy plan and delete derived terraform resources'
+      displayName: 'Save plan text representation'
 
     - task: PublishPipelineArtifact@1
       displayName: 'Publish Pipeline Artifact'
@@ -63,10 +86,10 @@ stages:
         artifact: terraform_resources_${{ parameters.environment }}
 
 - stage: 'Terraform_Apply_${{ parameters.environment }}'
-  displayName: 'Apply ${{ parameters.environment }}'
+  displayName: 'Apply ${{ parameters.displayName }}'
   jobs:
   - deployment: ${{ parameters.environment }}
-    environment: ${{ parameters.environment }}
+    environment: ${{ parameters.displayName }}
     displayName: "Terraform Apply"
     pool:
       vmImage: 'ubuntu-latest'
@@ -96,6 +119,40 @@ stages:
               backendAzureRmContainerName: ${{ parameters.TerraformBackendStorageContainer }}
               backendAzureRmKey: ${{ parameters.environment }}.tfstate
 
+          # As the Terraform extension plan task doesn't support -detailed-exitcode
+          # (to check if any changes are present), we define an equivalent AzureCLI
+          # task instead.
+          - task: AzureCLI@1
+            inputs:
+              azureSubscription: '${{ parameters.TerraformEnvironmentServiceConnection }}'
+              scriptLocation: inlineScript
+              inlineScript: |
+                set -eu
+                export ARM_CLIENT_ID="$servicePrincipalId"
+                export ARM_CLIENT_SECRET="$servicePrincipalKey"
+                export ARM_SUBSCRIPTION_ID=$(az account show --query id -o tsv)
+                export ARM_TENANT_ID="$tenantId"
+                # terraform plan -detailed-exitcode exit codes:
+                # 0 - Succeeded, diff is empty (no changes)
+                # 1 - Errored
+                # 2 - Succeeded, there is a diff
+                if ! terraform plan -detailed-exitcode -out=tfplan -var environment=${{ parameters.environment }} ${{ parameters.TerraformVariables }}; then
+                  if [ $? -eq 1 ]; then
+                   exit $?
+                  fi
+                  echo "##vso[task.setvariable variable=TERRAFORM_UPDATES;]true"
+                fi
+              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform_resources'
+              addSpnToEnvironment: true
+            displayName: 'Terraform plan'
+
+          - bash: |
+              set -eux  # ensure pipeline stops if terraform fails or diff reports a difference
+              terraform show -no-color tfplan > newplan.txt
+              diff -u plan.txt newplan.txt
+            workingDirectory: '$(System.DefaultWorkingDirectory)/terraform_resources'
+            displayName: 'Ensure plan is unchanged'
+
           - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV1@0
             name: 'terraform_plan'
             displayName: 'Terraform plan'
@@ -115,6 +172,7 @@ stages:
 
           - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV1@0
             displayName: 'Terraform apply'
+            condition: and(succeeded(), variables['TERRAFORM_UPDATES'])
             inputs:
               command: apply
               workingDirectory: '$(System.DefaultWorkingDirectory)/terraform_resources'

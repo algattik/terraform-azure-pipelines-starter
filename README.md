@@ -18,10 +18,18 @@ When the project is run in Azure DevOps, however, the pipeline adds the
 `infrastructure/terraform_backend/backend.tf` to the `infrastructure/terraform` 
 directory to enable the Azure Storage shared backend for additional resiliency.
 
-## Secrets and state management
+## Variables, secrets and state management
 
-You can inject secrets using `-var key=value` syntax in the `TerraformVariables` parameter.
-Those secrets could come from Key Vault-backed Azure DevOps variables.
+Variables can be injected using `-var key=value` syntax in the `TerraformVariables` parameter.
+The pipeline demonstrates this by adding a custom tag named `department` to the
+created resource group, with distinct values in staging and QA.
+
+To demonstrate one approach to secrets management, the Terraform configuration
+generates a random password (per stage) for the SQL Server instance, stored in
+Terraform state.
+You can adapt this to suit your lifecycle.
+You might want to read credentials from an externally managed Key Vault
+or inject them via pipeline variables.
 
 Rather than passing a Terraform plan between stages (which would contain clear-text secrets),
 the pipeline performs `terraform plan` again before applying changes and verifies that
@@ -56,9 +64,8 @@ Repeat those steps for an environment named `QA`.
 Create a Service Connection of type Azure Resource Manager at subscription scope. Name the Service Connection `Terraform`.
 Allow all pipelines to use the connection.
 
-In your subscription, create a storage account and a storage container named `terraformstate` within the storage account.
-
-In `infrastructure/azure-pipelines.yml`, update the `TerraformBackendStorageAccount` name to your storage account name.
+In `infrastructure/azure-pipelines.yml`, update the `TerraformBackendStorageAccount` name to a globally unique storage account name.
+The pipeline will create the storage account.
 
 Create a build pipeline referencing `infrastructure/azure-pipelines.yml`.
 
