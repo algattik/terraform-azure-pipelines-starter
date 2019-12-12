@@ -7,7 +7,7 @@ variable "keyvault_rg" {
 variable "keyvault_name" {
   type = string
   description = "Name of the Key Vault containing Terraform secrets. Use only lowercase letters and numbers"
-  default = "starterterraform"
+  default = "terraformstarter"
 }
 
 variable "appname" {
