@@ -109,7 +109,7 @@ stages:
           - bash: |
               set -eux  # ensure pipeline stops if terraform fails or diff reports a difference
               terraform show -no-color tfplan > newplan.txt
-              diff --color -u plan.txt newplan.txt
+              diff -u plan.txt newplan.txt
             workingDirectory: '$(System.DefaultWorkingDirectory)/terraform_resources'
             displayName: 'Ensure plan is unchanged'
 
