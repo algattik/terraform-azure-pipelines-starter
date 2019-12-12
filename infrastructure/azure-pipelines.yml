@@ -7,17 +7,6 @@ trigger:
     include:
     - infrastructure/
 
-variables:
-  TerraformVersion: 0.12.17
-  TerraformVariables: -var environment=stage
-  TerraformBackendServiceConnection: Terraform
-  TerraformEnvironmentServiceConnection: Terraform
-  TerraformBackendResourceGroup: terraform
-  TerraformBackendStorageAccount: terraformstarter
-  TerraformBackendStorageContainer: terraformstate
-  TerraformBackendStorageBlob: tf/terraform.tfstate
-
-
 stages:
 - template: terraform-stages-template.yml
   parameters:
