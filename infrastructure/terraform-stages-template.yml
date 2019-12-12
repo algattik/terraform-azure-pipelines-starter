@@ -33,7 +33,7 @@ stages:
           time az keyvault secret set --vault-name -n '${{ parameters.TerraformBackendKeyVault }}' -n "sql_password" --value "Str0ng!Passw0wrd"
           #time az keyvault set-policy --name "Terraform" --spn "$servicePrincipalId" --secret-permissions get list
         addSpnToEnvironment: true
-      displayName: 'Set up backend and Key Vault"
+      displayName: 'Set up backend and Key Vault'
 
     - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@0
       displayName: 'Install Terraform'
