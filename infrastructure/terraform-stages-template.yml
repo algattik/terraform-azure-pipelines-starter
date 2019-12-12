@@ -1,6 +1,6 @@
 parameters:
   environment: Staging
-  TerraformVersion: 0.12.17
+  TerraformVersion: 0.12.18
   TerraformVariables: -var environment=stage
   TerraformBackendServiceConnection: Terraform
   TerraformEnvironmentServiceConnection: Terraform
@@ -56,13 +56,6 @@ stages:
       workingDirectory: '$(System.DefaultWorkingDirectory)/infrastructure/terraform'
       displayName: 'Copy plan and delete derived terraform resources'
 
-    # The plan is already shown at the end of the the `terraform plan` output, but for
-    # clarity, you can enable this task to output it again separately.
-    # - bash: |
-    #    terraform show tfplan
-    #  workingDirectory: '$(System.DefaultWorkingDirectory)/infrastructure/terraform'
-    #  displayName: 'Terraform show'
-
     - task: PublishPipelineArtifact@1
       displayName: 'Publish Pipeline Artifact'
       inputs:
@@ -102,6 +95,23 @@ stages:
               backendAzureRmStorageAccountName: ${{ parameters.TerraformBackendStorageAccount }}
               backendAzureRmContainerName: ${{ parameters.TerraformBackendStorageContainer }}
               backendAzureRmKey: ${{ parameters.environment }}.tfstate
+
+          - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV1@0
+            name: 'terraform_plan'
+            displayName: 'Terraform plan'
+            inputs:
+              command: plan
+              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform_resources'
+              commandOptions: -out tfplan ${{ parameters.TerraformVariables }}
+              environmentServiceNameAzureRM: '${{ parameters.TerraformEnvironmentServiceConnection }}'
+              backendServiceArm: '${{ parameters.TerraformBackendServiceConnection }}'
+
+          - bash: |
+              set -eux
+              terraform show -no-color tfplan > newplan.txt
+              diff -C5 plan.txt newplan.txt
+            workingDirectory: '$(System.DefaultWorkingDirectory)/terraform_resources'
+            displayName: 'Ensure plan is unchanged'
 
           - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV1@0
             displayName: 'Terraform apply'
