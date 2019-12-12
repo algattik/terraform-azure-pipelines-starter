@@ -70,7 +70,7 @@ stages:
     # Resource providers can be > 100MB large, we don't want them in the published artifacts.
     - bash: |
         set -eux
-        if ! test -f $(terraform_plan.jsonPlanFilePath); then
+        if ! test -s $(terraform_plan.jsonPlanFilePath); then
           echo "Terraform plan failed."
           exit 1
         fi
