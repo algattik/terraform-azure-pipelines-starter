@@ -11,6 +11,9 @@ parameters:
   TerraformBackendLocation: North Europe
   TerraformBackendKeyVault: terraformstarter
 
+variables:
+  SQLPassword: "Str0ng!Passw0wrd"
+
 stages:
 - stage: 'Terraform_Plan_${{ parameters.environment }}'
   displayName: 'Plan ${{ parameters.displayName }}'
@@ -32,8 +35,9 @@ stages:
           time az storage account create  -n '${{ parameters.TerraformBackendStorageAccount }}' -o none
           time az storage container create --account-name '${{ parameters.TerraformBackendStorageAccount }}' -n '${{ parameters.TerraformBackendStorageContainer }}' -o none
           time az keyvault create -n '${{ parameters.TerraformBackendKeyVault }}' -o none
-          time az keyvault secret set --vault-name '${{ parameters.TerraformBackendKeyVault }}' -n "${{ parameters.environment }}-sql-password" --value "Str0ng!Passw0wrd" -o none
           time az keyvault set-policy -n '${{ parameters.TerraformBackendKeyVault }}' --spn "$servicePrincipalId" --secret-permissions get list -o none
+          set +x  # do not echo secret
+          az keyvault secret set --vault-name '${{ parameters.TerraformBackendKeyVault }}' -n "${{ parameters.environment }}-sql-password" --value "$(SQLPassword)" -o none
         addSpnToEnvironment: true
       displayName: 'Set up backend and Key Vault'
 
