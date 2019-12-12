@@ -74,11 +74,7 @@ stages:
           echo "Terraform plan failed."
           exit 1
         fi
-        echo 1
-        cat $(terraform_plan.jsonPlanFilePath)
-        echo 2
-        cat $(terraform_plan.jsonOutputVariablesPath)
-        echo 3
+        ls -la $(terraform_plan.jsonPlanFilePath)
         terraform show -no-color tfplan > plan.txt
         rm -r tfplan .terraform
       workingDirectory: '$(System.DefaultWorkingDirectory)/infrastructure/terraform'
