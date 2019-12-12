@@ -1,7 +1,7 @@
 parameters:
   displayName: Staging
   environment: stage
-  TerraformVersion: 0.12.18
+  TerraformVersion: 0.12.17
   TerraformVariables: ''
   TerraformBackendServiceConnection: Terraform
   TerraformEnvironmentServiceConnection: Terraform
