@@ -8,6 +8,7 @@ parameters:
   TerraformBackendStorageAccount: terraformstarter
   TerraformBackendStorageContainer: terraformstate
   TerraformBackendLocation: North Europe
+  TerraformBackendKeyVault: terraform
 
 stages:
 - stage: 'Terraform_Plan_${{ parameters.environment }}'
