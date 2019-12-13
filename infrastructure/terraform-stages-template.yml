@@ -154,23 +154,6 @@ stages:
             displayName: 'Ensure plan is unchanged'
 
           - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV1@0
-            name: 'terraform_plan'
-            displayName: 'Terraform plan'
-            inputs:
-              command: plan
-              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform_resources'
-              commandOptions: -out tfplan ${{ parameters.TerraformVariables }}
-              environmentServiceNameAzureRM: '${{ parameters.TerraformEnvironmentServiceConnection }}'
-              backendServiceArm: '${{ parameters.TerraformBackendServiceConnection }}'
-
-          - bash: |
-              set -eux  # ensure pipeline stops if terraform fails or diff reports a difference
-              terraform show -no-color tfplan > newplan.txt
-              diff -u plan.txt newplan.txt
-            workingDirectory: '$(System.DefaultWorkingDirectory)/terraform_resources'
-            displayName: 'Ensure plan is unchanged'
-
-          - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV1@0
             displayName: 'Terraform apply'
             condition: and(succeeded(), variables['TERRAFORM_UPDATES'])
             inputs:
