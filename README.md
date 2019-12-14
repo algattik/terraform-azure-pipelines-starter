@@ -64,7 +64,7 @@ Repeat those steps for an environment named `QA`.
 Create a Service Connection of type Azure Resource Manager at subscription scope. Name the Service Connection `Terraform`.
 Allow all pipelines to use the connection.
 
-In `infrastructure/azure-pipelines.yml`, update the `TerraformBackendStorageAccount` name to a globally unique storage account name.
+In `infrastructure/terraform-stages-template.yml`, update the `TerraformBackendStorageAccount` name to a globally unique storage account name.
 The pipeline will create the storage account.
 
 Create a build pipeline referencing `infrastructure/azure-pipelines.yml`.
