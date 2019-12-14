@@ -17,6 +17,7 @@ resource "azurerm_resource_group" "main" {
 
 module "sqlserver" {
   source = "./sqlserver"
+  appname = var.appname
   environment = var.environment
   resource_group = azurerm_resource_group.main.name
   location = azurerm_resource_group.main.location

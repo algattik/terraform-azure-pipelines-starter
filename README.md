@@ -38,6 +38,11 @@ a textual representation of the plan (not including secrets values) is unchanged
 The Terraform state is managed in a Azure Storage backend. Note that this backend contains
 secrets in cleartext.
 
+## Getting started
+
+In `infrastructure/terraform/variables.tf`, change the `appname` default value from
+`starterterraform` to a globally unique name.
+
 ## Azure DevOps pipeline
 
 Install the [Terraform extension for Azure DevOps](https://marketplace.visualstudio.com/items?itemName=ms-devlabs.custom-terraform-tasks).
