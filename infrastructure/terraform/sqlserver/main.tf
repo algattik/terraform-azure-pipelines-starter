@@ -9,7 +9,7 @@ resource "random_password" "sql" {
 }
 
 resource "azurerm_sql_server" "example" {
-  name                         = "algattik01sqlserver"
+  name                         = "yourname01sqlserver${var.environment}"
   resource_group_name          = var.resource_group
   location                     = var.location
   version                      = "12.0"
