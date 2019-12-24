@@ -92,8 +92,8 @@ stages:
       displayName: 'Terraform plan'
 
     - bash: |
-        # Save a human-friendly version of the plan with passwords hidden
-        terraform show -no-color tfplan > plan.txt
+        # Save a checksum of the plan, as any secret variables passed to Terraform would appear in clear within it.
+        terraform show -no-color tfplan | sha256sum > plan.sha256
         # Remove terraform plan from published artifacts, as it contains clear-text secrets
         rm tfplan
         # Resource providers can be > 100MB large, we don't want them in the published artifacts.
@@ -176,9 +176,9 @@ stages:
             displayName: 'Terraform plan'
 
           - bash: |
-              set -eux  # ensure pipeline stops if terraform fails or diff reports a difference
-              terraform show -no-color tfplan > newplan.txt
-              diff -u plan.txt newplan.txt
+              set -eux  # ensure pipeline stops if terraform fails or diff reports a difference in plan
+              terraform show -no-color tfplan | sha256sum > newplan.sha256
+              diff plan.sha256 newplan.sha256
             workingDirectory: '$(System.DefaultWorkingDirectory)/terraform_resources'
             displayName: 'Ensure plan is unchanged'
 

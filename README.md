@@ -82,7 +82,7 @@ Review the detailed plan to ensure no critical resources or data will be lost.
 
 ![terraform plan output](/docs/images/terraform_plan_output.png)
 
-You can also review the plan and terraform configuration files by navigating to Pipeline Artifacts (rightmost column in the table below).
+You can also review the terraform configuration files by navigating to Pipeline Artifacts (rightmost column in the table below).
 
 ![pipeline artifacts](/docs/images/pipeline_artifacts.png)
 
@@ -142,39 +142,10 @@ rerun this command to reinitialize your working directory. If you forget, other
 commands will detect it and remind you to do so if necessary.
 ```
 
-Run `terraform plan`.
+Run `terraform apply`.
 
 ```
-$ terraform plan -out tfplan
-Refreshing Terraform state in-memory prior to plan...
-The refreshed state will be used to calculate this plan, but will not be
-persisted to local or remote state storage.
-
-data.azurerm_client_config.current: Refreshing state...
-
-------------------------------------------------------------------------
-
-An execution plan has been generated and is shown below.
-Resource actions are indicated with the following symbols:
-  + create
-
-Terraform will perform the following actions:
-
-  # azurerm_resource_group.main will be created
-  + resource "azurerm_resource_group" "main" {
-      + id       = (known after apply)
-      + location = "northeurope"
-      + name     = "rg-starterterraform-dev-main"
-      + tags     = (known after apply)
-    }
-
-Plan: 1 to add, 0 to change, 0 to destroy.
-```
-
-Run `terraform apply tfplan`.
-
-```
-$ terraform apply tfplan
+$ terraform apply
 data.azurerm_client_config.current: Refreshing state...
 
 An execution plan has been generated and is shown below.
