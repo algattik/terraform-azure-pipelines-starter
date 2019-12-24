@@ -26,10 +26,32 @@ stages:
         scriptLocation: inlineScript
         inlineScript: |
           set -eux  # fail on error
-          time az configure --defaults group='${{ parameters.TerraformBackendResourceGroup }}' location='${{ parameters.TerraformBackendLocation }}'
-          time az group create -n '${{ parameters.TerraformBackendResourceGroup }}' -o none
-          time az storage account create  -n '${{ parameters.TerraformBackendStorageAccount }}' -o none
-          time az storage container create --account-name '${{ parameters.TerraformBackendStorageAccount }}' -n '${{ parameters.TerraformBackendStorageContainer }}' -o none
+          export AZURE_STORAGE_ACCOUNT='${{ parameters.TerraformBackendStorageAccount }}'
+          container='${{ parameters.TerraformBackendStorageContainer }}'
+          if ! az storage container exists -n "$container" -o none; then
+            time az configure --defaults group='${{ parameters.TerraformBackendResourceGroup }}' location='${{ parameters.TerraformBackendLocation }}'
+            time az group create -n '${{ parameters.TerraformBackendResourceGroup }}' -o none
+            time az storage account create -n "$AZURE_STORAGE_ACCOUNT" -o none
+            time az storage container create -n "$container" -o none
+          fi
+          blob='${{ parameters.environment }}.tfstate'
+          if [[ $(az storage blob exists -c "$container" -n "$blob" --query exists) = "true" ]]; then
+            if [[ $(az storage blob show -c "$container" -n "$blob" --query "properties.lease.status=='locked'") = "true" ]]; then
+              echo "State is leased"
+              lock_jwt=$(az storage blob show -c "$container" -n "$blob" --query metadata.terraformlockid -o tsv)
+              if [ "$lock_jwt" != "" ]; then
+                lock_json=$(base64 -d <<< "$lock_jwt")
+                echo "State is locked"
+                jq . <<< "$lock_json"
+              fi
+              if [ "${TERRAFORM_BREAK_LEASE:-}" != "" ]; then
+                az storage blob lease break -c "$container" -b "$blob"
+              else
+                echo "If you're really sure you want to break the lease, rerun the pipeline with variable TERRAFORM_BREAK_LEASE set to 1."
+                exit 1
+              fi
+            fi
+          fi
         addSpnToEnvironment: true
       displayName: 'Set up backend'
 
@@ -136,11 +158,18 @@ stages:
                 # 0 - Succeeded, diff is empty (no changes)
                 # 1 - Errored
                 # 2 - Succeeded, there is a diff
-                if ! terraform plan -detailed-exitcode -out=tfplan -var environment=${{ parameters.environment }} ${{ parameters.TerraformVariables }}; then
-                  if [ $? -eq 1 ]; then
-                   exit $?
+                # >2 - unexpected, crash or bug
+                if terraform plan -detailed-exitcode -out=tfplan -var environment=${{ parameters.environment }} ${{ parameters.TerraformVariables }}; then
+                  echo "Terraform succeeded with no changes"
+                else
+                  terraform_exitcode=$?
+                  if [ $terraform_exitcode -eq 2 ]; then
+                    echo "Terraform succeeded with updates"
+                    echo "##vso[task.setvariable variable=TERRAFORM_UPDATES;]true"
+                  else
+                    echo "ERROR: terraform exited with code $terraform_exitcode"
+                    exit 1
                   fi
-                  echo "##vso[task.setvariable variable=TERRAFORM_UPDATES;]true"
                 fi
               workingDirectory: '$(System.DefaultWorkingDirectory)/terraform_resources'
               addSpnToEnvironment: true
@@ -153,12 +182,18 @@ stages:
             workingDirectory: '$(System.DefaultWorkingDirectory)/terraform_resources'
             displayName: 'Ensure plan is unchanged'
 
-          - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV1@0
+          - task: AzureCLI@1
             displayName: 'Terraform apply'
             condition: and(succeeded(), variables['TERRAFORM_UPDATES'])
             inputs:
-              command: apply
+              azureSubscription: '${{ parameters.TerraformEnvironmentServiceConnection }}'
+              scriptLocation: inlineScript
+              inlineScript: |
+                set -eu
+                export ARM_CLIENT_ID="$servicePrincipalId"
+                export ARM_CLIENT_SECRET="$servicePrincipalKey"
+                export ARM_SUBSCRIPTION_ID=$(az account show --query id -o tsv)
+                export ARM_TENANT_ID="$tenantId"
+                terraform apply -auto-approve tfplan
               workingDirectory: '$(System.DefaultWorkingDirectory)/terraform_resources'
-              commandOptions: '-auto-approve tfplan'
-              environmentServiceNameAzureRM: '${{ parameters.TerraformEnvironmentServiceConnection }}'
-              backendServiceArm: '${{ parameters.TerraformBackendServiceConnection }}'
+              addSpnToEnvironment: true

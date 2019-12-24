@@ -12,10 +12,12 @@ stages:
   parameters:
     environment: stage
     displayName: Staging
-    TerraformVariables: -var department=Engineering
+    TerraformVariables: >-
+      -var department=Engineering
 
 - template: terraform-stages-template.yml
   parameters:
     environment: qa
     displayName: QA
-    TerraformVariables: -var department=QA
+    TerraformVariables: >-
+      -var department=QA
