@@ -86,7 +86,7 @@ stages:
           export ARM_CLIENT_SECRET="$servicePrincipalKey"
           export ARM_SUBSCRIPTION_ID=$(az account show --query id -o tsv)
           export ARM_TENANT_ID="$tenantId"
-          terraform plan -out=tfplan -var environment=${{ parameters.environment }} ${{ parameters.TerraformVariables }}
+          terraform plan -input=false -out=tfplan -var environment=${{ parameters.environment }} ${{ parameters.TerraformVariables }}
         workingDirectory: '$(System.DefaultWorkingDirectory)/infrastructure/terraform'
         addSpnToEnvironment: true
       displayName: 'Terraform plan'
@@ -159,7 +159,7 @@ stages:
                 # 1 - Errored
                 # 2 - Succeeded, there is a diff
                 # >2 - unexpected, crash or bug
-                if terraform plan -detailed-exitcode -out=tfplan -var environment=${{ parameters.environment }} ${{ parameters.TerraformVariables }}; then
+                if terraform plan -detailed-exitcode -input=false -out=tfplan -var environment=${{ parameters.environment }} ${{ parameters.TerraformVariables }}; then
                   echo "Terraform succeeded with no changes"
                 else
                   terraform_exitcode=$?
@@ -194,6 +194,6 @@ stages:
                 export ARM_CLIENT_SECRET="$servicePrincipalKey"
                 export ARM_SUBSCRIPTION_ID=$(az account show --query id -o tsv)
                 export ARM_TENANT_ID="$tenantId"
-                terraform apply -auto-approve tfplan
+                terraform apply -input=false -auto-approve tfplan
               workingDirectory: '$(System.DefaultWorkingDirectory)/terraform_resources'
               addSpnToEnvironment: true
