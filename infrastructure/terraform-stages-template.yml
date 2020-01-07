@@ -132,7 +132,6 @@ stages:
                 | keys[] 
                 | ["##vso[task.setvariable variable=" + . + ";isOutput=true;isSecret=" + ($in[.].sensitive | tostring) + "]" + ($in[.].value | tostring)]
                 | @tsv'
-            condition: and(succeeded(), variables['TERRAFORM_UPDATES'])
             name: TerraformOutputs
             displayName: Export terraform outputs
             workingDirectory: $(System.DefaultWorkingDirectory)/terraform_resources
