@@ -69,6 +69,18 @@ stages:
       workingDirectory: '$(System.DefaultWorkingDirectory)'
 
     - template: terraform-init-template.yml
+      parameters:
+        parameters.TerraformBackendServiceConnection: ${{ parameters.TerraformBackendServiceConnection }}
+        parameters.TerraformEnvironmentServiceConnection: ${{ parameters.TerraformEnvironmentServiceConnection }}
+        parameters.TerraformBackendResourceGroup: ${{ parameters.TerraformBackendResourceGroup }}
+        parameters.TerraformBackendStorageAccount: ${{ parameters.TerraformBackendStorageAccount }}
+        parameters.TerraformBackendStorageContainer: ${{ parameters.TerraformBackendStorageContainer }}
+        parameters.environment: ${{ parameters.environment }}
+
+- task: AzureCLI@1
+  displayName: Get ARM credentials for Terraform
+  inputs:
+    azureSubscription: ${{ parameters.TerraformEnvironmentServiceConnection }}
 
     # Using AzureCLI instead of Terraform extension because of following issues:
     # - https://github.com/microsoft/azure-pipelines-extensions/issues/748
@@ -124,6 +136,13 @@ stages:
               targetPath: '$(System.DefaultWorkingDirectory)/terraform_resources'
 
           - template: terraform-init-template.yml
+            parameters:
+              parameters.TerraformBackendServiceConnection: ${{ parameters.TerraformBackendServiceConnection }}
+              parameters.TerraformEnvironmentServiceConnection: ${{ parameters.TerraformEnvironmentServiceConnection }}
+              parameters.TerraformBackendResourceGroup: ${{ parameters.TerraformBackendResourceGroup }}
+              parameters.TerraformBackendStorageAccount: ${{ parameters.TerraformBackendStorageAccount }}
+              parameters.TerraformBackendStorageContainer: ${{ parameters.TerraformBackendStorageContainer }}
+              parameters.environment: ${{ parameters.environment }}
 
           # As the Terraform extension plan task doesn't support -detailed-exitcode
           # (to check if any changes are present), we define an equivalent AzureCLI
