@@ -1,15 +1,8 @@
 parameters:
   environment: stage
   environmentDisplayName: Staging
-  TerraformVersion: 0.12.18
   TerraformArguments: ''
   TerraformEnvVariables:
-  TerraformBackendServiceConnection: Terraform
-  TerraformEnvironmentServiceConnection: Terraform
-  TerraformBackendResourceGroup: terraform
-  TerraformBackendStorageAccount: terraformstarterstate
-  TerraformBackendStorageContainer: terraformstate
-  TerraformBackendLocation: North Europe
 
 stages:
 - stage: Terraform_Plan_${{ parameters.environment }}
@@ -21,43 +14,6 @@ stages:
       vmImage: ubuntu-latest
     steps:
 
-    - task: AzureCLI@1
-      displayName: Set up Terraform backend
-      # Avoid concurrent Terraform runs on PRs, which would result in failures due to exclusive lock on remote state file.
-      condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), variables['RUN_FLAG_TERRAFORM']))
-      inputs:
-        azureSubscription: ${{ parameters.TerraformBackendServiceConnection }}
-        scriptLocation: inlineScript
-        inlineScript: |
-          set -eu  # fail on error
-          export AZURE_STORAGE_ACCOUNT='${{ parameters.TerraformBackendStorageAccount }}'
-          container='${{ parameters.TerraformBackendStorageContainer }}'
-          if ! az storage container exists -n "$container" -o none; then
-            az configure --defaults group='${{ parameters.TerraformBackendResourceGroup }}' location='${{ parameters.TerraformBackendLocation }}'
-            az group create -n '${{ parameters.TerraformBackendResourceGroup }}' -o none
-            az storage account create -n "$AZURE_STORAGE_ACCOUNT" -o none
-            az storage container create -n "$container" -o none
-          fi
-          blob='${{ parameters.environment }}.tfstate'
-          if [[ $(az storage blob exists -c "$container" -n "$blob" --query exists) = "true" ]]; then
-            if [[ $(az storage blob show -c "$container" -n "$blob" --query "properties.lease.status=='locked'") = "true" ]]; then
-              echo "State is leased"
-              lock_jwt=$(az storage blob show -c "$container" -n "$blob" --query metadata.terraformlockid -o tsv)
-              if [ "$lock_jwt" != "" ]; then
-                lock_json=$(base64 -d <<< "$lock_jwt")
-                echo "State is locked"
-                jq . <<< "$lock_json"
-              fi
-              if [ "${TERRAFORM_BREAK_LEASE:-}" != "" ]; then
-                az storage blob lease break -c "$container" -b "$blob"
-              else
-                echo "If you're really sure you want to break the lease, rerun the pipeline with variable TERRAFORM_BREAK_LEASE set to 1."
-                exit 1
-              fi
-            fi
-          fi
-        addSpnToEnvironment: true
-
     - bash: |
         cp infrastructure/terraform_backend/* infrastructure/terraform
       displayName: Copy terraform backend config to terraform directory
@@ -66,12 +22,6 @@ stages:
     - template: terraform-init-template.yml
       parameters:
         TerraformDirectory: $(System.DefaultWorkingDirectory)/infrastructure/terraform
-        TerraformVersion: ${{ parameters.TerraformVersion }}
-        TerraformBackendServiceConnection: ${{ parameters.TerraformBackendServiceConnection }}
-        TerraformEnvironmentServiceConnection: ${{ parameters.TerraformEnvironmentServiceConnection }}
-        TerraformBackendResourceGroup: ${{ parameters.TerraformBackendResourceGroup }}
-        TerraformBackendStorageAccount: ${{ parameters.TerraformBackendStorageAccount }}
-        TerraformBackendStorageContainer: ${{ parameters.TerraformBackendStorageContainer }}
         environment: ${{ parameters.environment }}
 
     # Using AzureCLI instead of Terraform extension because of following issues:
@@ -83,6 +33,8 @@ stages:
         export ARM_CLIENT_SECRET=$(ARM_CLIENT_SECRET)
         terraform plan -input=false -out=tfplan -var environment=${{ parameters.environment }} ${{ parameters.TerraformArguments }}
       displayName: Terraform plan
+      # Avoid concurrent Terraform runs on PRs, which would result in failures due to exclusive lock on remote state file.
+      condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), variables['RUN_FLAG_TERRAFORM']))
       workingDirectory: $(System.DefaultWorkingDirectory)/infrastructure/terraform
       env:
         ${{ parameters.TerraformEnvVariables }}
@@ -125,13 +77,8 @@ stages:
           - template: terraform-init-template.yml
             parameters:
               TerraformDirectory: $(System.DefaultWorkingDirectory)/terraform_resources
-              TerraformVersion: ${{ parameters.TerraformVersion }}
-              TerraformBackendServiceConnection: ${{ parameters.TerraformBackendServiceConnection }}
-              TerraformEnvironmentServiceConnection: ${{ parameters.TerraformEnvironmentServiceConnection }}
-              TerraformBackendResourceGroup: ${{ parameters.TerraformBackendResourceGroup }}
-              TerraformBackendStorageAccount: ${{ parameters.TerraformBackendStorageAccount }}
-              TerraformBackendStorageContainer: ${{ parameters.TerraformBackendStorageContainer }}
               environment: ${{ parameters.environment }}
+              provisionStorage: false
 
           # As the Terraform extension plan task doesn't support -detailed-exitcode
           # (to check if any changes are present), we define an equivalent AzureCLI
@@ -157,6 +104,7 @@ stages:
                 fi
               fi
             displayName: Terraform plan
+            condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), variables['RUN_FLAG_TERRAFORM']))
             workingDirectory: $(System.DefaultWorkingDirectory)/terraform_resources
             env:
               ${{ parameters.TerraformEnvVariables }}
@@ -165,6 +113,7 @@ stages:
               set -eux  # ensure pipeline stops if terraform fails or diff reports a difference
               terraform show -no-color tfplan > newplan.txt
               diff -u plan.txt newplan.txt
+            condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), variables['RUN_FLAG_TERRAFORM']))
             workingDirectory: $(System.DefaultWorkingDirectory)/terraform_resources
             displayName: Ensure plan is unchanged
 
@@ -175,3 +124,23 @@ stages:
             condition: and(succeeded(), variables['TERRAFORM_UPDATES'])
             displayName: Terraform apply
             workingDirectory: $(System.DefaultWorkingDirectory)/terraform_resources
+
+          - bash: |
+              set -eu
+              terraform output -json | jq -r '
+                . as $in
+                | keys[] 
+                | ["##vso[task.setvariable variable=" + . + ";isOutput=true;isSecret=" + ($in[.].sensitive | tostring) + "]" + ($in[.].value | tostring)]
+                | @tsv'
+            condition: and(succeeded(), variables['TERRAFORM_UPDATES'])
+            name: TerraformOutputs
+            displayName: Export terraform outputs
+            workingDirectory: $(System.DefaultWorkingDirectory)/terraform_resources
+
+  - job: Test
+    dependsOn: Terraform_Apply_${{ parameters.environment }}
+    variables:
+      subscription_id: $[ dependencies.Terraform_Apply_${{ parameters.environment }}.outputs['TerraformOutputs.subscription_id'] ]
+    steps:
+      - bash: |
+          echo "Terraform output: Subscription Id = $(subscription_id)"
