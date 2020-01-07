@@ -7,7 +7,7 @@ This project can be used as a starter for Azure Pipelines deploying resources on
 It includes a multi-stage pipeline allowing to manually review and approve infrastructure
 changes before they are deployed.
 
-The Terraform definition only deploys a resource group and an empty SQL Server.
+The Terraform definition only deploys a resource group and two empty SQL Server instances.
 You can extend the definition with your custom infrastructure, such as Web Apps.
 
 The project can be used in local development without a remote Terraform state backend.
@@ -17,19 +17,13 @@ good security practices.
 When the project is run in Azure DevOps, however, the pipeline adds the
 `infrastructure/terraform_backend/backend.tf` to the `infrastructure/terraform` 
 directory to enable the Azure Storage shared backend for additional resiliency.
+See the Terraform documentation to understand [why a state store is needed](https://www.terraform.io/docs/state/purpose.html).
 
-## Variables, secrets and state management
+## Variables and state management
 
-Variables can be injected using `-var key=value` syntax in the `TerraformVariables` parameter.
+Variables can be injected using `-var key=value` syntax in the `TerraformArguments` parameter.
 The pipeline demonstrates this by adding a custom tag named `department` to the
 created resource group, with distinct values in staging and QA.
-
-To demonstrate one approach to secrets management, the Terraform configuration
-generates a random password (per stage) for the SQL Server instance, stored in
-Terraform state.
-You can adapt this to suit your lifecycle.
-You might want to read credentials from an externally managed Key Vault
-or inject them via pipeline variables.
 
 Rather than passing a Terraform plan between stages (which would contain clear-text secrets),
 the pipeline performs `terraform plan` again before applying changes and verifies that
@@ -37,6 +31,22 @@ a textual representation of the plan (not including secrets values) is unchanged
 
 The Terraform state is managed in a Azure Storage backend. Note that this backend contains
 secrets in cleartext.
+
+## Secrets management
+
+### Generate secrets with Terraform
+
+To demonstrate one approach to secrets management, the Terraform configuration
+generates a random password (per stage) for the SQL Server 1 instance, stored in
+Terraform state.
+You can adapt this to suit your lifecycle.
+
+### Manage secrets with Azure DevOps
+
+You might want to read credentials from an externally managed Key Vault
+or inject them via pipeline variables. This approach is demonstrated
+by defining a password for the SQL Server 2 instance and passing
+it to Terraform via an environment variable.
 
 ## Getting started
 
@@ -68,6 +78,12 @@ Repeat those steps for an environment named `QA`.
 
 Create a Service Connection of type Azure Resource Manager at subscription scope. Name the Service Connection `Terraform`.
 Allow all pipelines to use the connection.
+
+Under Library, create a Variable Group named `terraform-secrets`. Create a secret
+named `SQL_PASSWORD` and give it a unique value (e.g. `Strong_Passw0rd!`). Make
+the variable secret using the padlock icon.
+
+![environment approval](/docs/images/variable_group.png)
 
 In `infrastructure/terraform-stages-template.yml`, update the `TerraformBackendStorageAccount` name to a globally unique storage account name.
 The pipeline will create the storage account.

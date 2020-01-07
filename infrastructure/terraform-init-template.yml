@@ -12,7 +12,7 @@ steps:
 - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV1@0
   displayName: Terraform init
   inputs:
-    workingDirectory: $(System.DefaultWorkingDirectory)/infrastructure/terraform
+    workingDirectory: $(System.DefaultWorkingDirectory)/terraform_resources
     backendServiceArm: ${{ parameters.TerraformBackendServiceConnection }}
     backendAzureRmResourceGroupName: ${{ parameters.TerraformBackendResourceGroup }}
     backendAzureRmStorageAccountName: ${{ parameters.TerraformBackendStorageAccount }}
