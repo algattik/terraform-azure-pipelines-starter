@@ -139,7 +139,9 @@ stages:
   - job: Test
     dependsOn: Apply
     variables:
-      subscription_id: $[ dependencies.Apply.outputs['Apply.TerraformOutputs.subscription_id'] ]
+      sqlserver1_host: $[ dependencies.Apply.outputs['Apply.TerraformOutputs.sqlserver1_host'] ]
+      sqlserver1_user: $[ dependencies.Apply.outputs['Apply.TerraformOutputs.sqlserver1_user'] ]
+      sqlserver1_password: $[ dependencies.Apply.outputs['Apply.TerraformOutputs.sqlserver1_password'] ]
     steps:
       - bash: |
-          echo "Terraform output: Subscription Id = $(subscription_id)"
+          echo "Terraform output: $(sqlserver1_host):$(sqlserver1_password)@$(sqlserver1_host)"
