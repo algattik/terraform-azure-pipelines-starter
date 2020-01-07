@@ -130,6 +130,11 @@ stages:
               terraform output -json | jq -r '
                 . as $in
                 | keys[] 
+                | ["vso[task.setvariable variable=" + . + ";isOutput=true;isSecret=" + ($in[.].sensitive | tostring) + "]" + ($in[.].value | tostring)]
+                | @tsv'
+              terraform output -json | jq -r '
+                . as $in
+                | keys[] 
                 | ["##vso[task.setvariable variable=" + . + ";isOutput=true;isSecret=" + ($in[.].sensitive | tostring) + "]" + ($in[.].value | tostring)]
                 | @tsv'
             name: TerraformOutputs
