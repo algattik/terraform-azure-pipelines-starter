@@ -65,6 +65,7 @@ stages:
 
     - template: terraform-init-template.yml
       parameters:
+        TerraformVersion: ${{ parameters.TerraformVersion }}
         TerraformBackendServiceConnection: ${{ parameters.TerraformBackendServiceConnection }}
         TerraformEnvironmentServiceConnection: ${{ parameters.TerraformEnvironmentServiceConnection }}
         TerraformBackendResourceGroup: ${{ parameters.TerraformBackendResourceGroup }}
@@ -122,6 +123,7 @@ stages:
 
           - template: terraform-init-template.yml
             parameters:
+              TerraformVersion: ${{ parameters.TerraformVersion }}
               TerraformBackendServiceConnection: ${{ parameters.TerraformBackendServiceConnection }}
               TerraformEnvironmentServiceConnection: ${{ parameters.TerraformEnvironmentServiceConnection }}
               TerraformBackendResourceGroup: ${{ parameters.TerraformBackendResourceGroup }}
