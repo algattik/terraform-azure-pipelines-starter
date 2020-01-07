@@ -158,6 +158,8 @@ stages:
               fi
             displayName: Terraform plan
             workingDirectory: $(System.DefaultWorkingDirectory)/terraform_resources
+            env:
+              ${{ parameters.TerraformEnvVariables }}
 
           - bash: |
               set -eux  # ensure pipeline stops if terraform fails or diff reports a difference
