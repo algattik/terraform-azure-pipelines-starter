@@ -1,8 +1,9 @@
 parameters:
-  displayName: Staging
   environment: stage
+  environmentDisplayName: Staging
   TerraformVersion: 0.12.18
-  TerraformVariables: ''
+  TerraformArguments: ''
+  TerraformEnvVariables:
   TerraformBackendServiceConnection: Terraform
   TerraformEnvironmentServiceConnection: Terraform
   TerraformBackendResourceGroup: terraform
@@ -11,28 +12,31 @@ parameters:
   TerraformBackendLocation: North Europe
 
 stages:
-- stage: 'Terraform_Plan_${{ parameters.environment }}'
-  displayName: 'Plan ${{ parameters.displayName }}'
+- stage: Terraform_Plan_${{ parameters.environment }}
+  displayName: Plan ${{ parameters.environmentDisplayName }}
   jobs:
-  - job: "Terraform_Plan"
-    displayName: "Terraform Plan"
+  - job: Terraform_Plan
+    displayName: Terraform Plan
     pool:
-      vmImage: 'ubuntu-latest'
+      vmImage: ubuntu-latest
     steps:
 
     - task: AzureCLI@1
+      displayName: Set up Terraform backend
+      # Avoid concurrent Terraform runs on PRs, which would result in failures due to exclusive lock on remote state file.
+      condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), variables['RUN_FLAG_TERRAFORM']))
       inputs:
         azureSubscription: ${{ parameters.TerraformBackendServiceConnection }}
         scriptLocation: inlineScript
         inlineScript: |
-          set -eux  # fail on error
+          set -eu  # fail on error
           export AZURE_STORAGE_ACCOUNT='${{ parameters.TerraformBackendStorageAccount }}'
           container='${{ parameters.TerraformBackendStorageContainer }}'
           if ! az storage container exists -n "$container" -o none; then
-            time az configure --defaults group='${{ parameters.TerraformBackendResourceGroup }}' location='${{ parameters.TerraformBackendLocation }}'
-            time az group create -n '${{ parameters.TerraformBackendResourceGroup }}' -o none
-            time az storage account create -n "$AZURE_STORAGE_ACCOUNT" -o none
-            time az storage container create -n "$container" -o none
+            az configure --defaults group='${{ parameters.TerraformBackendResourceGroup }}' location='${{ parameters.TerraformBackendLocation }}'
+            az group create -n '${{ parameters.TerraformBackendResourceGroup }}' -o none
+            az storage account create -n "$AZURE_STORAGE_ACCOUNT" -o none
+            az storage container create -n "$container" -o none
           fi
           blob='${{ parameters.environment }}.tfstate'
           if [[ $(az storage blob exists -c "$container" -n "$blob" --query exists) = "true" ]]; then
@@ -53,43 +57,35 @@ stages:
             fi
           fi
         addSpnToEnvironment: true
-      displayName: 'Set up backend'
-
-    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@0
-      displayName: 'Install Terraform'
-      inputs:
-        terraformVersion: ${{ parameters.TerraformVersion }}
 
     - bash: |
         cp infrastructure/terraform_backend/* infrastructure/terraform
-      workingDirectory: '$(System.DefaultWorkingDirectory)'
-      displayName: 'Copy terraform backend config to terraform directory'
+      displayName: Copy terraform backend config to terraform directory
+      workingDirectory: $(System.DefaultWorkingDirectory)
 
-    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV1@0
-      displayName: 'Terraform init'
-      inputs:
-        workingDirectory: '$(System.DefaultWorkingDirectory)/infrastructure/terraform'
-        backendServiceArm: '${{ parameters.TerraformBackendServiceConnection }}'
-        backendAzureRmResourceGroupName: ${{ parameters.TerraformBackendResourceGroup }}
-        backendAzureRmStorageAccountName: ${{ parameters.TerraformBackendStorageAccount }}
-        backendAzureRmContainerName: ${{ parameters.TerraformBackendStorageContainer }}
-        backendAzureRmKey: ${{ parameters.environment }}.tfstate
+    - template: terraform-init-template.yml
+      parameters:
+        TerraformDirectory: $(System.DefaultWorkingDirectory)/infrastructure/terraform
+        TerraformVersion: ${{ parameters.TerraformVersion }}
+        TerraformBackendServiceConnection: ${{ parameters.TerraformBackendServiceConnection }}
+        TerraformEnvironmentServiceConnection: ${{ parameters.TerraformEnvironmentServiceConnection }}
+        TerraformBackendResourceGroup: ${{ parameters.TerraformBackendResourceGroup }}
+        TerraformBackendStorageAccount: ${{ parameters.TerraformBackendStorageAccount }}
+        TerraformBackendStorageContainer: ${{ parameters.TerraformBackendStorageContainer }}
+        environment: ${{ parameters.environment }}
 
-    # Using AzureCLI instead of Terraform extension because of https://github.com/microsoft/azure-pipelines-extensions/issues/747
-    - task: AzureCLI@1
-      inputs:
-        azureSubscription: '${{ parameters.TerraformEnvironmentServiceConnection }}'
-        scriptLocation: inlineScript
-        inlineScript: |
-          set -eu
-          export ARM_CLIENT_ID="$servicePrincipalId"
-          export ARM_CLIENT_SECRET="$servicePrincipalKey"
-          export ARM_SUBSCRIPTION_ID=$(az account show --query id -o tsv)
-          export ARM_TENANT_ID="$tenantId"
-          terraform plan -input=false -out=tfplan -var environment=${{ parameters.environment }} ${{ parameters.TerraformVariables }}
-        workingDirectory: '$(System.DefaultWorkingDirectory)/infrastructure/terraform'
-        addSpnToEnvironment: true
-      displayName: 'Terraform plan'
+    # Using AzureCLI instead of Terraform extension because of following issues:
+    # - https://github.com/microsoft/azure-pipelines-extensions/issues/748
+    # - https://github.com/microsoft/azure-pipelines-extensions/issues/725
+    # - https://github.com/microsoft/azure-pipelines-extensions/issues/747
+    - bash: |
+        set -eu
+        export ARM_CLIENT_SECRET=$(ARM_CLIENT_SECRET)
+        terraform plan -input=false -out=tfplan -var environment=${{ parameters.environment }} ${{ parameters.TerraformArguments }}
+      displayName: Terraform plan
+      workingDirectory: $(System.DefaultWorkingDirectory)/infrastructure/terraform
+      env:
+        ${{ parameters.TerraformEnvVariables }}
 
     - bash: |
         # Save a human-friendly version of the plan with passwords hidden
@@ -98,102 +94,84 @@ stages:
         rm tfplan
         # Resource providers can be > 100MB large, we don't want them in the published artifacts.
         rm -r .terraform
-      workingDirectory: '$(System.DefaultWorkingDirectory)/infrastructure/terraform'
-      displayName: 'Save plan text representation'
+      displayName: Save plan text representation
+      workingDirectory: $(System.DefaultWorkingDirectory)/infrastructure/terraform
 
     - task: PublishPipelineArtifact@1
-      displayName: 'Publish Pipeline Artifact'
+      displayName: Publish Pipeline Artifact
       inputs:
         targetPath: $(System.DefaultWorkingDirectory)/infrastructure/terraform
         artifact: terraform_resources_${{ parameters.environment }}
 
-- stage: 'Terraform_Apply_${{ parameters.environment }}'
-  displayName: 'Apply ${{ parameters.displayName }}'
+- stage: Terraform_Apply_${{ parameters.environment }}
+  displayName: Apply ${{ parameters.environmentDisplayName }}
   jobs:
   - deployment: ${{ parameters.environment }}
-    environment: ${{ parameters.displayName }}
-    displayName: "Terraform Apply"
+    environment: ${{ parameters.environmentDisplayName }}
+    displayName: Terraform Apply
     pool:
-      vmImage: 'ubuntu-latest'
+      vmImage: ubuntu-latest
     strategy:
       runOnce:
         deploy:
           steps:
 
-          - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@0
-            displayName: 'Install Terraform'
-            inputs:
-              terraformVersion: ${{ parameters.TerraformVersion }}
-
           - task: DownloadPipelineArtifact@2
-            displayName: 'Download Pipeline Artifact'
+            displayName: Download Pipeline Artifact
             inputs:
               artifactName: terraform_resources_${{ parameters.environment }}
-              targetPath: '$(System.DefaultWorkingDirectory)/terraform_resources'
+              targetPath: $(System.DefaultWorkingDirectory)/terraform_resources
 
-          - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV1@0
-            displayName: 'Terraform init'
-            inputs:
-              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform_resources'
-              backendServiceArm: '${{ parameters.TerraformBackendServiceConnection }}'
-              backendAzureRmResourceGroupName: ${{ parameters.TerraformBackendResourceGroup }}
-              backendAzureRmStorageAccountName: ${{ parameters.TerraformBackendStorageAccount }}
-              backendAzureRmContainerName: ${{ parameters.TerraformBackendStorageContainer }}
-              backendAzureRmKey: ${{ parameters.environment }}.tfstate
+          - template: terraform-init-template.yml
+            parameters:
+              TerraformDirectory: $(System.DefaultWorkingDirectory)/terraform_resources
+              TerraformVersion: ${{ parameters.TerraformVersion }}
+              TerraformBackendServiceConnection: ${{ parameters.TerraformBackendServiceConnection }}
+              TerraformEnvironmentServiceConnection: ${{ parameters.TerraformEnvironmentServiceConnection }}
+              TerraformBackendResourceGroup: ${{ parameters.TerraformBackendResourceGroup }}
+              TerraformBackendStorageAccount: ${{ parameters.TerraformBackendStorageAccount }}
+              TerraformBackendStorageContainer: ${{ parameters.TerraformBackendStorageContainer }}
+              environment: ${{ parameters.environment }}
 
           # As the Terraform extension plan task doesn't support -detailed-exitcode
           # (to check if any changes are present), we define an equivalent AzureCLI
           # task instead.
-          - task: AzureCLI@1
-            inputs:
-              azureSubscription: '${{ parameters.TerraformEnvironmentServiceConnection }}'
-              scriptLocation: inlineScript
-              inlineScript: |
-                set -eu
-                export ARM_CLIENT_ID="$servicePrincipalId"
-                export ARM_CLIENT_SECRET="$servicePrincipalKey"
-                export ARM_SUBSCRIPTION_ID=$(az account show --query id -o tsv)
-                export ARM_TENANT_ID="$tenantId"
-                # terraform plan -detailed-exitcode exit codes:
-                # 0 - Succeeded, diff is empty (no changes)
-                # 1 - Errored
-                # 2 - Succeeded, there is a diff
-                # >2 - unexpected, crash or bug
-                if terraform plan -detailed-exitcode -input=false -out=tfplan -var environment=${{ parameters.environment }} ${{ parameters.TerraformVariables }}; then
-                  echo "Terraform succeeded with no changes"
+          - bash: |
+              set -eu
+              export ARM_CLIENT_SECRET=$(ARM_CLIENT_SECRET)
+              # terraform plan -detailed-exitcode exit codes:
+              # 0 - Succeeded, diff is empty (no changes)
+              # 1 - Errored
+              # 2 - Succeeded, there is a diff
+              # >2 - unexpected, crash or bug
+              if terraform plan -detailed-exitcode -input=false -out=tfplan -var environment=${{ parameters.environment }} ${{ parameters.TerraformArguments }}; then
+                echo "Terraform succeeded with no changes"
+              else
+                terraform_exitcode=$?
+                if [ $terraform_exitcode -eq 2 ]; then
+                  echo "Terraform succeeded with updates"
+                  echo "##vso[task.setvariable variable=TERRAFORM_UPDATES;]true"
                 else
-                  terraform_exitcode=$?
-                  if [ $terraform_exitcode -eq 2 ]; then
-                    echo "Terraform succeeded with updates"
-                    echo "##vso[task.setvariable variable=TERRAFORM_UPDATES;]true"
-                  else
-                    echo "ERROR: terraform exited with code $terraform_exitcode"
-                    exit 1
-                  fi
+                  echo "ERROR: terraform exited with code $terraform_exitcode"
+                  exit 1
                 fi
-              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform_resources'
-              addSpnToEnvironment: true
-            displayName: 'Terraform plan'
+              fi
+            displayName: Terraform plan
+            workingDirectory: $(System.DefaultWorkingDirectory)/terraform_resources
+            env:
+              ${{ parameters.TerraformEnvVariables }}
 
           - bash: |
               set -eux  # ensure pipeline stops if terraform fails or diff reports a difference
               terraform show -no-color tfplan > newplan.txt
               diff -u plan.txt newplan.txt
-            workingDirectory: '$(System.DefaultWorkingDirectory)/terraform_resources'
-            displayName: 'Ensure plan is unchanged'
+            workingDirectory: $(System.DefaultWorkingDirectory)/terraform_resources
+            displayName: Ensure plan is unchanged
 
-          - task: AzureCLI@1
-            displayName: 'Terraform apply'
+          - bash: |
+              set -eu
+              export ARM_CLIENT_SECRET=$(ARM_CLIENT_SECRET)
+              terraform apply -input=false -auto-approve tfplan
             condition: and(succeeded(), variables['TERRAFORM_UPDATES'])
-            inputs:
-              azureSubscription: '${{ parameters.TerraformEnvironmentServiceConnection }}'
-              scriptLocation: inlineScript
-              inlineScript: |
-                set -eu
-                export ARM_CLIENT_ID="$servicePrincipalId"
-                export ARM_CLIENT_SECRET="$servicePrincipalKey"
-                export ARM_SUBSCRIPTION_ID=$(az account show --query id -o tsv)
-                export ARM_TENANT_ID="$tenantId"
-                terraform apply -input=false -auto-approve tfplan
-              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform_resources'
-              addSpnToEnvironment: true
+            displayName: Terraform apply
+            workingDirectory: $(System.DefaultWorkingDirectory)/terraform_resources

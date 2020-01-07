@@ -21,3 +21,8 @@ variable "department" {
   description = "A sample variable passed from the build pipeline and used to tag resources."
   default = "Engineering"
 }
+
+variable "sql2password" {
+  type    = string
+  description = "A password for SQL Server #2"
+}
