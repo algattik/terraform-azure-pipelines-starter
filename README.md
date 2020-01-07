@@ -87,7 +87,7 @@ the variable secret using the padlock icon.
 
 ![environment approval](/docs/images/variable_group.png)
 
-In `infrastructure/terraform-stages-template.yml`, update the `TerraformBackendStorageAccount` name to a globally unique storage account name.
+In `infrastructure/terraform-init-template.yml`, update the `TerraformBackendStorageAccount` name to a globally unique storage account name.
 The pipeline will create the storage account.
 
 Create a build pipeline referencing `infrastructure/azure-pipelines.yml`.
@@ -228,6 +228,18 @@ subscription_id = xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
 
 At this stage you will have a new resource group deployed named `rg-starterterraform-dev-main`. 
+
+# Using Terraform outputs
+
+The pipeline automatically exports Terraform outputs into pipeline variables.
+
+The pipeline contains a sample job that consumes those variables:
+
+![output variables](/docs/images/output_variables.png)
+
+This mechanism is useful for using generated resource names, access keys,
+and even [entire kube_config files](https://www.terraform.io/docs/providers/azurerm/r/kubernetes_cluster.html#kube_config_raw) (for Azure Kubernetes Service)
+in downstream testing or continuous delivery jobs.
 
 # Next steps
 
