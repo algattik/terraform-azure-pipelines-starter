@@ -229,6 +229,18 @@ subscription_id = xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 
 At this stage you will have a new resource group deployed named `rg-starterterraform-dev-main`. 
 
+# Using Terraform outputs
+
+The pipeline automatically exports Terraform outputs into pipeline variables.
+
+The pipeline contains a sample job that consumes those variables:
+
+![output variables](/docs/images/output_variables.png)
+
+This mechanism is useful for using generated resource names, access keys,
+and even [entire kube_config files](https://www.terraform.io/docs/providers/azurerm/r/kubernetes_cluster.html#kube_config_raw) (for Azure Kubernetes Service)
+in downstream testing or continuous delivery jobs.
+
 # Next steps
 
 * It's not currently possible to skip approval and deployment if there are no
