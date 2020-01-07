@@ -135,7 +135,7 @@ stages:
             displayName: Export terraform outputs
             workingDirectory: $(System.DefaultWorkingDirectory)/terraform_resources
 
-  - job: Test
+  - job: Dummy
     dependsOn: Apply
     variables:
       sqlserver1_host: $[ dependencies.Apply.outputs['Apply.TerraformOutputs.sqlserver1_host'] ]
@@ -143,4 +143,4 @@ stages:
       sqlserver1_password: $[ dependencies.Apply.outputs['Apply.TerraformOutputs.sqlserver1_password'] ]
     steps:
       - bash: |
-          DB_CONN_STRING="Server=tcp:$(sqlserver1_host),1433;Database=myDataBase;User ID=$(sqlserver1_user);Password=$(sqlserver1_password)"
+          DB_CONN_STRING="Server=tcp:$(sqlserver1_host);User ID=$(sqlserver1_user);Password=$(sqlserver1_password)"
