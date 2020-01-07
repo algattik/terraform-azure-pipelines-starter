@@ -4,6 +4,9 @@ steps:
   inputs:
     terraformVersion: ${{ parameters.TerraformVersion }}
 
+- bash: |
+    find /opt/hostedtoolcache/terraform/
+
 - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV1@0
   displayName: Terraform init
   inputs:
