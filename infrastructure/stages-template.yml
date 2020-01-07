@@ -97,7 +97,6 @@ stages:
                 terraform_exitcode=$?
                 if [ $terraform_exitcode -eq 2 ]; then
                   echo "Terraform succeeded with updates"
-                  echo "##vso[task.setvariable variable=TERRAFORM_UPDATES;]true"
                 else
                   echo "ERROR: terraform exited with code $terraform_exitcode"
                   exit 1
@@ -121,7 +120,6 @@ stages:
               set -eu
               export ARM_CLIENT_SECRET=$(ARM_CLIENT_SECRET)
               terraform apply -input=false -auto-approve tfplan
-            condition: and(succeeded(), variables['TERRAFORM_UPDATES'])
             displayName: Terraform apply
             workingDirectory: $(System.DefaultWorkingDirectory)/terraform_resources
 
