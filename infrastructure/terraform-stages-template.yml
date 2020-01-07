@@ -70,12 +70,12 @@ stages:
 
     - template: terraform-init-template.yml
       parameters:
-        parameters.TerraformBackendServiceConnection: ${{ parameters.TerraformBackendServiceConnection }}
-        parameters.TerraformEnvironmentServiceConnection: ${{ parameters.TerraformEnvironmentServiceConnection }}
-        parameters.TerraformBackendResourceGroup: ${{ parameters.TerraformBackendResourceGroup }}
-        parameters.TerraformBackendStorageAccount: ${{ parameters.TerraformBackendStorageAccount }}
-        parameters.TerraformBackendStorageContainer: ${{ parameters.TerraformBackendStorageContainer }}
-        parameters.environment: ${{ parameters.environment }}
+        TerraformBackendServiceConnection: ${{ parameters.TerraformBackendServiceConnection }}
+        TerraformEnvironmentServiceConnection: ${{ parameters.TerraformEnvironmentServiceConnection }}
+        TerraformBackendResourceGroup: ${{ parameters.TerraformBackendResourceGroup }}
+        TerraformBackendStorageAccount: ${{ parameters.TerraformBackendStorageAccount }}
+        TerraformBackendStorageContainer: ${{ parameters.TerraformBackendStorageContainer }}
+        environment: ${{ parameters.environment }}
 
 - task: AzureCLI@1
   displayName: Get ARM credentials for Terraform
@@ -137,12 +137,12 @@ stages:
 
           - template: terraform-init-template.yml
             parameters:
-              parameters.TerraformBackendServiceConnection: ${{ parameters.TerraformBackendServiceConnection }}
-              parameters.TerraformEnvironmentServiceConnection: ${{ parameters.TerraformEnvironmentServiceConnection }}
-              parameters.TerraformBackendResourceGroup: ${{ parameters.TerraformBackendResourceGroup }}
-              parameters.TerraformBackendStorageAccount: ${{ parameters.TerraformBackendStorageAccount }}
-              parameters.TerraformBackendStorageContainer: ${{ parameters.TerraformBackendStorageContainer }}
-              parameters.environment: ${{ parameters.environment }}
+              TerraformBackendServiceConnection: ${{ parameters.TerraformBackendServiceConnection }}
+              TerraformEnvironmentServiceConnection: ${{ parameters.TerraformEnvironmentServiceConnection }}
+              TerraformBackendResourceGroup: ${{ parameters.TerraformBackendResourceGroup }}
+              TerraformBackendStorageAccount: ${{ parameters.TerraformBackendStorageAccount }}
+              TerraformBackendStorageContainer: ${{ parameters.TerraformBackendStorageContainer }}
+              environment: ${{ parameters.environment }}
 
           # As the Terraform extension plan task doesn't support -detailed-exitcode
           # (to check if any changes are present), we define an equivalent AzureCLI
