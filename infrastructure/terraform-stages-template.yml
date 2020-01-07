@@ -58,7 +58,7 @@ stages:
 - stage: Terraform_Apply_${{ parameters.environment }}
   displayName: Apply ${{ parameters.environmentDisplayName }}
   jobs:
-  - deployment: ${{ parameters.environment }}
+  - deployment: Apply
     environment: ${{ parameters.environmentDisplayName }}
     displayName: Terraform Apply
     pool:
@@ -138,9 +138,9 @@ stages:
             workingDirectory: $(System.DefaultWorkingDirectory)/terraform_resources
 
   - job: Test
-    dependsOn: Terraform_Apply_${{ parameters.environment }}
+    dependsOn: Apply
     variables:
-      subscription_id: $[ dependencies.Terraform_Apply_${{ parameters.environment }}.outputs['TerraformOutputs.subscription_id'] ]
+      subscription_id: $[ dependencies.Apply.outputs['Apply.TerraformOutputs.subscription_id'] ]
     steps:
       - bash: |
           echo "Terraform output: Subscription Id = $(subscription_id)"
