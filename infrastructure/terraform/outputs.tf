@@ -12,4 +12,5 @@ output "sqlserver1_user" {
 
 output "sqlserver1_password" {
   value = module.sqlserver1_generated_password.password
+  sensitive = true
 }

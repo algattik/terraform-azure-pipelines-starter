@@ -93,6 +93,7 @@ stages:
               # >2 - unexpected, crash or bug
               if terraform plan -detailed-exitcode -input=false -out=tfplan -var environment=${{ parameters.environment }} ${{ parameters.TerraformArguments }}; then
                 echo "Terraform succeeded with no changes"
+                # NB terraform apply should still be run, e.g. if new outputs have been created
               else
                 terraform_exitcode=$?
                 if [ $terraform_exitcode -eq 2 ]; then
