@@ -77,23 +77,18 @@ stages:
         TerraformBackendStorageContainer: ${{ parameters.TerraformBackendStorageContainer }}
         environment: ${{ parameters.environment }}
 
-    - task: AzureCLI@1
-      displayName: Get ARM credentials for Terraform
-      inputs:
-        azureSubscription: ${{ parameters.TerraformEnvironmentServiceConnection }}
-     
-        # Using AzureCLI instead of Terraform extension because of following issues:
-        # - https://github.com/microsoft/azure-pipelines-extensions/issues/748
-        # - https://github.com/microsoft/azure-pipelines-extensions/issues/725
-        # - https://github.com/microsoft/azure-pipelines-extensions/issues/747
-        - bash: |
-            set -eu
-            export ARM_CLIENT_SECRET=$(ARM_CLIENT_SECRET)
-            terraform plan -input=false -out=tfplan -var environment=${{ parameters.environment }} ${{ parameters.TerraformArguments }}
-          displayName: Terraform plan
-          workingDirectory: $(System.DefaultWorkingDirectory)/infrastructure/terraform
-          env:
-            ${{ parameters.TerraformEnvVariables }}
+    # Using AzureCLI instead of Terraform extension because of following issues:
+    # - https://github.com/microsoft/azure-pipelines-extensions/issues/748
+    # - https://github.com/microsoft/azure-pipelines-extensions/issues/725
+    # - https://github.com/microsoft/azure-pipelines-extensions/issues/747
+    - bash: |
+        set -eu
+        export ARM_CLIENT_SECRET=$(ARM_CLIENT_SECRET)
+        terraform plan -input=false -out=tfplan -var environment=${{ parameters.environment }} ${{ parameters.TerraformArguments }}
+      displayName: Terraform plan
+      workingDirectory: $(System.DefaultWorkingDirectory)/infrastructure/terraform
+      env:
+        ${{ parameters.TerraformEnvVariables }}
 
     - bash: |
         # Save a human-friendly version of the plan with passwords hidden
