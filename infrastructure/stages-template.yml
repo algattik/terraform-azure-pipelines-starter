@@ -129,12 +129,17 @@ stages:
               terraform output -json | jq -r '
                 . as $in
                 | keys[] 
-                | ["vso[task.setvariable variable=" + . + ";isOutput=true;isSecret=" + ($in[.].sensitive | tostring) + "]" + ($in[.].value | tostring)]
+                | ["vso[task.setvariable variable=" + . + ";isOutput=true;issecret=" + ($in[.].sensitive | tostring) + "]" + ($in[.].value | tostring)]
                 | @tsv'
               terraform output -json | jq -r '
                 . as $in
                 | keys[] 
-                | ["##vso[task.setvariable variable=" + . + ";isOutput=true;isSecret=" + ($in[.].sensitive | tostring) + "]" + ($in[.].value | tostring)]
+                | ["##vso[task.setvariable variable=" + . + ";isOutput=true;issecret=" + ($in[.].sensitive | tostring) + "]" + ($in[.].value | tostring)]
+                | @tsv'
+              terraform output -json | jq -r '
+                . as $in
+                | keys[] 
+                | ["vso[task.setvariable variable=" + . + ";isOutput=true;issecret=" + ($in[.].sensitive | tostring) + "]" + ($in[.].value | tostring)]
                 | @tsv'
             name: TerraformOutputs
             displayName: Export terraform outputs
@@ -148,4 +153,4 @@ stages:
       sqlserver1_password: $[ dependencies.Apply.outputs['Apply.TerraformOutputs.sqlserver1_password'] ]
     steps:
       - bash: |
-          echo "Terraform output: $(sqlserver1_host):$(sqlserver1_password)@$(sqlserver1_host)"
+          echo "Database connection string: Server=tcp:$(sqlserver1_host),1433;Database=myDataBase;User ID=$(sqlserver1_user);Password=$(sqlserver1_password)"
