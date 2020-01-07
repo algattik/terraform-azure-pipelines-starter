@@ -8,6 +8,9 @@ steps:
     find /opt/hostedtoolcache/terraform/
     /opt/hostedtoolcache/terraform/0.12.18/x64/terraform
     true
+    find .
+    pwd
+  workingDirectory: $(System.DefaultWorkingDirectory)/terraform_resources
 
 - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV1@0
   displayName: Terraform init

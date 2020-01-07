@@ -7,7 +7,9 @@ This project can be used as a starter for Azure Pipelines deploying resources on
 It includes a multi-stage pipeline allowing to manually review and approve infrastructure
 changes before they are deployed.
 
-The Terraform definition only deploys a resource group and two empty SQL Server instances.
+The Terraform definition only deploys a resource group and two empty SQL Server instances
+(to illustrate two different approaches to managing secrets, in this case the SQL Server
+password).
 You can extend the definition with your custom infrastructure, such as Web Apps.
 
 The project can be used in local development without a remote Terraform state backend.
