@@ -87,7 +87,7 @@ the variable secret using the padlock icon.
 
 ![environment approval](/docs/images/variable_group.png)
 
-In `infrastructure/terraform-stages-template.yml`, update the `TerraformBackendStorageAccount` name to a globally unique storage account name.
+In `infrastructure/terraform-init-template.yml`, update the `TerraformBackendStorageAccount` name to a globally unique storage account name.
 The pipeline will create the storage account.
 
 Create a build pipeline referencing `infrastructure/azure-pipelines.yml`.
