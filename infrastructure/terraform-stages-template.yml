@@ -65,6 +65,7 @@ stages:
 
     - template: terraform-init-template.yml
       parameters:
+        TerraformDirectory: $(System.DefaultWorkingDirectory)/infrastructure/terraform
         TerraformVersion: ${{ parameters.TerraformVersion }}
         TerraformBackendServiceConnection: ${{ parameters.TerraformBackendServiceConnection }}
         TerraformEnvironmentServiceConnection: ${{ parameters.TerraformEnvironmentServiceConnection }}
@@ -123,6 +124,7 @@ stages:
 
           - template: terraform-init-template.yml
             parameters:
+              TerraformDirectory: $(System.DefaultWorkingDirectory)/terraform_resources
               TerraformVersion: ${{ parameters.TerraformVersion }}
               TerraformBackendServiceConnection: ${{ parameters.TerraformBackendServiceConnection }}
               TerraformEnvironmentServiceConnection: ${{ parameters.TerraformEnvironmentServiceConnection }}
