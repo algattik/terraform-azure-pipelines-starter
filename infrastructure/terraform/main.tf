@@ -15,12 +15,21 @@ resource "azurerm_resource_group" "main" {
 
 # Sample Resources
 
-module "sqlserver" {
-  source = "./sqlserver"
+module "sqlserver1_generated_password" {
+  source = "./sqlserver1_generated_password"
   appname = var.appname
   environment = var.environment
   resource_group = azurerm_resource_group.main.name
   location = azurerm_resource_group.main.location
+}
+
+module "sqlserver2_assigned_password" {
+  source = "./sqlserver2_assigned_password"
+  appname = var.appname
+  environment = var.environment
+  resource_group = azurerm_resource_group.main.name
+  location = azurerm_resource_group.main.location
+  sql_password = var.sql2password
 }
 
 # Add additional modules...

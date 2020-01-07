@@ -9,6 +9,10 @@ provider "azurerm" {
   version = "=1.38.0"
 }
 
+provider "random" {
+  version = "~> 2.2"
+}
+
 # Data
 
 # Make client_id, tenant_id, subscription_id and object_id variables

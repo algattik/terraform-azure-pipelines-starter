@@ -7,17 +7,26 @@ trigger:
     include:
     - infrastructure/
 
+variables:
+- group: terraform-secrets
+
 stages:
 - template: terraform-stages-template.yml
   parameters:
     environment: stage
-    displayName: Staging
-    TerraformVariables: >-
+    environmentDisplayName: Staging
+    TerraformArguments: >-
       -var department=Engineering
+    # For additional security, pass secret through environment instead of command line.
+    # Terraform recognizes TF_VAR prefixed environment variables.
+    TerraformEnvVariables:
+      TF_VAR_sql2password: $(SQL_PASSWORD)
 
 - template: terraform-stages-template.yml
   parameters:
     environment: qa
-    displayName: QA
-    TerraformVariables: >-
+    environmentDisplayName: QA
+    TerraformArguments: >-
       -var department=QA
+    TerraformEnvVariables:
+      TF_VAR_sql2password: $(SQL_PASSWORD)
