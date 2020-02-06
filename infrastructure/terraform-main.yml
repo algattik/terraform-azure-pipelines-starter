@@ -1,3 +1,6 @@
+parameters:
+  TerraformArguments: ''
+
 variables:
 - group: terraform-secrets
 
@@ -7,6 +10,7 @@ stages:
     environment: stage
     environmentDisplayName: Staging
     TerraformArguments: >-
+      ${{ parameters.TerraformArguments }}
       -var department=Engineering
     # For additional security, pass secret through environment instead of command line.
     # Terraform recognizes TF_VAR prefixed environment variables.
@@ -18,6 +22,7 @@ stages:
     environment: qa
     environmentDisplayName: QA
     TerraformArguments: >-
+      ${{ parameters.TerraformArguments }}
       -var department=QA
     TerraformEnvVariables:
       TF_VAR_sql2password: $(SQL_PASSWORD)
