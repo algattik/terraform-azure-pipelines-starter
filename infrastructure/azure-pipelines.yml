@@ -1,1 +1,2 @@
-- template: terraform-main.yml
+extends:
+  template: terraform-main.yml
