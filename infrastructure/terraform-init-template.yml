@@ -64,15 +64,14 @@ steps:
 
 - task: AzureCLI@1
   displayName: Get ARM credentials for Terraform
-  condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), variables['RUN_FLAG_TERRAFORM']))
   inputs:
     azureSubscription: ${{ parameters.TerraformEnvironmentServiceConnection }}
     scriptLocation: inlineScript
     inlineScript: |
       set -eu
       subscriptionId=$(az account show --query id -o tsv)
-      echo "##vso[task.setvariable variable=ARM_CLIENT_ID]$servicePrincipalId"
-      echo "##vso[task.setvariable variable=ARM_CLIENT_SECRET;issecret=true]$servicePrincipalKey"
-      echo "##vso[task.setvariable variable=ARM_SUBSCRIPTION_ID]$subscriptionId"
-      echo "##vso[task.setvariable variable=ARM_TENANT_ID]$tenantId"
+      echo "##vso[task.setvariable variable=CLIENT_ID]$servicePrincipalId"
+      echo "##vso[task.setvariable variable=CLIENT_SECRET;issecret=true]$servicePrincipalKey"
+      echo "##vso[task.setvariable variable=SUBSCRIPTION_ID]$subscriptionId"
+      echo "##vso[task.setvariable variable=TENANT_ID]$tenantId"
     addSpnToEnvironment: true

@@ -30,13 +30,13 @@ stages:
     # - https://github.com/microsoft/azure-pipelines-extensions/issues/747
     - bash: |
         set -eu
-        export ARM_CLIENT_SECRET=$(ARM_CLIENT_SECRET)
         terraform plan -input=false -out=tfplan -var environment=${{ parameters.environment }} ${{ parameters.TerraformArguments }}
       displayName: Terraform plan
       # Avoid concurrent Terraform runs on PRs, which would result in failures due to exclusive lock on remote state file.
       condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), variables['RUN_FLAG_TERRAFORM']))
       workingDirectory: $(System.DefaultWorkingDirectory)/infrastructure/terraform
       env:
+        CLIENT_SECRET: $(CLIENT_SECRET)
         ${{ parameters.TerraformEnvVariables }}
 
     - bash: |
@@ -85,7 +85,7 @@ stages:
           # task instead.
           - bash: |
               set -eu
-              export ARM_CLIENT_SECRET=$(ARM_CLIENT_SECRET)
+              export CLIENT_SECRET=$(CLIENT_SECRET)
               # terraform plan -detailed-exitcode exit codes:
               # 0 - Succeeded, diff is empty (no changes)
               # 1 - Errored
@@ -119,10 +119,11 @@ stages:
 
           - bash: |
               set -eu
-              export ARM_CLIENT_SECRET=$(ARM_CLIENT_SECRET)
               terraform apply -input=false -auto-approve tfplan
             displayName: Terraform apply
             workingDirectory: $(System.DefaultWorkingDirectory)/terraform_resources
+            env:
+              CLIENT_SECRET: $(CLIENT_SECRET)
 
           - bash: |
               set -eu
