@@ -1,12 +1,3 @@
-pr: none
-trigger:
-  branches:
-    include:
-    - master
-  paths:
-    include:
-    - infrastructure/
-
 variables:
 - group: terraform-secrets
 
