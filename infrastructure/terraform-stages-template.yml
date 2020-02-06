@@ -135,7 +135,7 @@ stages:
             displayName: Export terraform outputs
             workingDirectory: $(System.DefaultWorkingDirectory)/terraform_resources
 
-  - job: Post-terraform
+  - job: Post_terraform
     dependsOn: Apply
     variables:
       sqlserver1_host: $[ dependencies.Apply.outputs['Apply.TerraformOutputs.sqlserver1_host'] ]
