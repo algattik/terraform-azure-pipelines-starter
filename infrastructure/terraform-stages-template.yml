@@ -24,7 +24,7 @@ stages:
         TerraformDirectory: $(System.DefaultWorkingDirectory)/infrastructure/terraform
         environment: ${{ parameters.environment }}
 
-    # Using AzureCLI instead of Terraform extension because of following issues:
+    # Using bash instead of Terraform extension because of following issues:
     # - https://github.com/microsoft/azure-pipelines-extensions/issues/748
     # - https://github.com/microsoft/azure-pipelines-extensions/issues/725
     # - https://github.com/microsoft/azure-pipelines-extensions/issues/747
@@ -81,7 +81,7 @@ stages:
               provisionStorage: false
 
           # As the Terraform extension plan task doesn't support -detailed-exitcode
-          # (to check if any changes are present), we define an equivalent AzureCLI
+          # (to check if any changes are present), we define an equivalent bash
           # task instead.
           - bash: |
               set -eu
@@ -119,10 +119,11 @@ stages:
 
           - bash: |
               set -eu
-              export ARM_CLIENT_SECRET=$(ARM_CLIENT_SECRET)
               terraform apply -input=false -auto-approve tfplan
             displayName: Terraform apply
             workingDirectory: $(System.DefaultWorkingDirectory)/terraform_resources
+            env:
+              ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
 
           - bash: |
               set -eu
@@ -135,7 +136,7 @@ stages:
             displayName: Export terraform outputs
             workingDirectory: $(System.DefaultWorkingDirectory)/terraform_resources
 
-  - job: Dummy
+  - job: Post_terraform
     dependsOn: Apply
     variables:
       sqlserver1_host: $[ dependencies.Apply.outputs['Apply.TerraformOutputs.sqlserver1_host'] ]

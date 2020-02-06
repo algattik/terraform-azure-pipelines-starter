@@ -11,7 +11,7 @@ variables:
 - group: terraform-secrets
 
 stages:
-- template: stages-template.yml
+- template: terraform-stages-template.yml
   parameters:
     environment: stage
     environmentDisplayName: Staging
@@ -22,7 +22,7 @@ stages:
     TerraformEnvVariables:
       TF_VAR_sql2password: $(SQL_PASSWORD)
 
-- template: stages-template.yml
+- template: terraform-stages-template.yml
   parameters:
     environment: qa
     environmentDisplayName: QA

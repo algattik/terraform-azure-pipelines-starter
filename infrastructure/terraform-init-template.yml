@@ -64,7 +64,6 @@ steps:
 
 - task: AzureCLI@1
   displayName: Get ARM credentials for Terraform
-  condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), variables['RUN_FLAG_TERRAFORM']))
   inputs:
     azureSubscription: ${{ parameters.TerraformEnvironmentServiceConnection }}
     scriptLocation: inlineScript

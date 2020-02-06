@@ -64,17 +64,17 @@ As of December 2019, there is no support for stage gates in Azure DevOps multi-s
 
 Create an environment with no resources. Name it `Staging`.
 
-![create environment](/docs/images/create_environment.png)
+![create environment](/docs/images/terraform_starter/create_environment.png)
 
 Define environment approvals. If you want to allow anyone out of a group a people to be able to individually approve, add a group.
 
-![create environment_approval1](/docs/images/create_environment_approval1.png)
+![create environment_approval1](/docs/images/terraform_starter/create_environment_approval1.png)
 
-![create environment approval2](/docs/images/create_environment_approval2.png)
+![create environment approval2](/docs/images/terraform_starter/create_environment_approval2.png)
 
-![create environment approval3](/docs/images/create_environment_approval3.png)
+![create environment approval3](/docs/images/terraform_starter/create_environment_approval3.png)
 
-![environment approval](/docs/images/environment_approval.png)
+![environment approval](/docs/images/terraform_starter/environment_approval.png)
 
 Repeat those steps for an environment named `QA`.
 
@@ -85,7 +85,7 @@ Under Library, create a Variable Group named `terraform-secrets`. Create a secre
 named `SQL_PASSWORD` and give it a unique value (e.g. `Strong_Passw0rd!`). Make
 the variable secret using the padlock icon.
 
-![environment approval](/docs/images/variable_group.png)
+![environment approval](/docs/images/terraform_starter/variable_group.png)
 
 In `infrastructure/terraform-init-template.yml`, update the `TerraformBackendStorageAccount` name to a globally unique storage account name.
 The pipeline will create the storage account.
@@ -94,21 +94,21 @@ Create a build pipeline referencing `infrastructure/azure-pipelines.yml`.
 
 As you run the pipeline, after running `terraform plan`, the next stage will be waiting for your approval.
 
-![pipeline stage waiting](/docs/images/pipeline_stage_waiting.png)
+![pipeline stage waiting](/docs/images/terraform_starter/pipeline_stage_waiting.png)
 
 Review the detailed plan to ensure no critical resources or data will be lost.
 
-![terraform plan output](/docs/images/terraform_plan_output.png)
+![terraform plan output](/docs/images/terraform_starter/terraform_plan_output.png)
 
 You can also review the plan and terraform configuration files by navigating to Pipeline Artifacts (rightmost column in the table below).
 
-![pipeline artifacts](/docs/images/pipeline_artifacts.png)
+![pipeline artifacts](/docs/images/terraform_starter/pipeline_artifacts.png)
 
-![pipeline artifacts detail](/docs/images/pipeline_artifacts_detail.png)
+![pipeline artifacts detail](/docs/images/terraform_starter/pipeline_artifacts_detail.png)
 
 Approve or reject the deployment.
 
-![stage approval waiting](/docs/images/stage_approval_waiting.png)
+![stage approval waiting](/docs/images/terraform_starter/stage_approval_waiting.png)
 
 The pipeline will proceed to `terraform apply`.
 
@@ -116,12 +116,12 @@ At this stage you will have a new resource group deployed named `rg-starterterra
 
 The pipeline will then proceed in the same manner for the `QA` environment.
 
-![pipeline completed](/docs/images/pipeline_completed.png)
+![pipeline completed](/docs/images/terraform_starter/pipeline_completed.png)
 
 If any changes have been performed on the infrastructure between the Plan and Apply stages, the pipeline will fail.
 You can rerun the Plan stage directly in the pipeline view to produce an updated plan.
 
-![plan changed](/docs/images/plan_changed.png)
+![plan changed](/docs/images/terraform_starter/plan_changed.png)
 
 ## Local development
 
@@ -235,7 +235,7 @@ The pipeline automatically exports Terraform outputs into pipeline variables.
 
 The pipeline contains a sample job that consumes those variables:
 
-![output variables](/docs/images/output_variables.png)
+![output variables](/docs/images/terraform_starter/output_variables.png)
 
 This mechanism is useful for using generated resource names, access keys,
 and even [entire kube_config files](https://www.terraform.io/docs/providers/azurerm/r/kubernetes_cluster.html#kube_config_raw) (for Azure Kubernetes Service)
