@@ -1,5 +1,7 @@
 parameters:
-  TerraformArguments: ''
+- name: TerraformArguments
+  type: string
+  default: ''
 
 variables:
 - group: terraform-secrets
