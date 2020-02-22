@@ -168,6 +168,19 @@ stages:
 
     - bash: |
         set -eu
+        #FIXME
+        #FIXME
+        #FIXME
+        #FIXME
+        #FIXME
+
+        terraform output -json
+
+        terraform output -json | jq -r '
+          . as $in
+          | keys[] 
+          | @tsv'
+
         terraform output -json | jq -r '
           . as $in
           | keys[] 
