@@ -1,7 +1,7 @@
 parameters:
   environment: stage
   provisionStorage: false
-  TerraformVersion: 0.12.18
+  TerraformVersion: 0.12.21
   TerraformBackendServiceConnection: Terraform
   TerraformEnvironmentServiceConnection: Terraform
   TerraformBackendResourceGroup: terraform
@@ -69,7 +69,7 @@ steps:
     backendAzureRmKey: ${{ parameters.environment }}.tfstate
 
 - task: AzureCLI@1
-  displayName: Set Terraform credentials
+  displayName: Terraform credentials
   inputs:
     azureSubscription: ${{ parameters.TerraformEnvironmentServiceConnection }}
     scriptLocation: inlineScript

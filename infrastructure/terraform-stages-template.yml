@@ -16,7 +16,7 @@ stages:
 
     - bash: |
         cp infrastructure/terraform_backend/* infrastructure/terraform
-      displayName: Terraform backend config
+      displayName: Configure backend
 
     - template: terraform-init-template.yml
       parameters:
@@ -46,11 +46,11 @@ stages:
         rm tfplan
         # Resource providers can be > 100MB large, we don't want them in the published artifacts.
         rm -r .terraform
-      displayName: Save plan text representation
+      displayName: Save plan text
       workingDirectory: infrastructure/terraform
 
     - task: PublishPipelineArtifact@1
-      displayName: Publish Pipeline Artifact
+      displayName: Publish plan artifact
       inputs:
         targetPath: infrastructure/terraform
         artifact: terraform_resources_${{ parameters.environment }}
@@ -69,7 +69,7 @@ stages:
           steps:
 
           - task: DownloadPipelineArtifact@2
-            displayName: Download Terraform plan
+            displayName: Download plan
             inputs:
               artifactName: terraform_resources_${{ parameters.environment }}
               targetPath: terraform_resources
@@ -114,7 +114,7 @@ stages:
               diff -u plan.txt newplan.txt
             condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), variables['RUN_FLAG_TERRAFORM']))
             workingDirectory: terraform_resources
-            displayName: Ensure plan is unchanged
+            displayName: Check unchanged plan
 
           - bash: |
               set -eu
@@ -134,7 +134,7 @@ stages:
 
     - bash: |
         cp infrastructure/terraform_backend/* infrastructure/terraform
-      displayName: Terraform backend config
+      displayName: Configure backend
 
     - template: terraform-init-template.yml
       parameters:
@@ -165,8 +165,8 @@ stages:
     displayName: Use Terraform outputs
     dependsOn: ReadTerraform
     variables:
-      sqlserver1_host: $[ dependencies.ReadTerraform.outputs['ReadTerraform.Outputs.sqlserver1_host'] ]
-      sqlserver1_user: $[ dependencies.ReadTerraform.outputs['ReadTerraform.Outputs.sqlserver1_user'] ]
+      sqlserver1_host: $[ dependencies.ReadTerraform.outputs['Outputs.sqlserver1_host'] ]
+      sqlserver1_user: $[ dependencies.ReadTerraform.outputs['Outputs.sqlserver1_user'] ]
     steps:
       - bash: |
           # Dummy job showing how to consume Terraform outputs
