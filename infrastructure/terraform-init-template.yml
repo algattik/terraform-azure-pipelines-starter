@@ -30,7 +30,7 @@ steps:
       fi
 
       container='${{ parameters.TerraformBackendStorageContainer }}'
-      if ! az storage container exists -n "$container" -o none; then
+      if ! az storage container show -n "$container" -o none 2>/dev/null; then
         az storage container create -n "$container" -o none
       fi
       blob='${{ parameters.environment }}.tfstate'
