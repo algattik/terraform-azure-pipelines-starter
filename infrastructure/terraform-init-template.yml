@@ -1,6 +1,6 @@
 parameters:
   environment: stage
-  provisionStorage: true
+  provisionStorage: false
   TerraformVersion: 0.12.18
   TerraformBackendServiceConnection: Terraform
   TerraformEnvironmentServiceConnection: Terraform
@@ -12,7 +12,7 @@ parameters:
 steps:
 
 - task: AzureCLI@1
-  displayName: Set up Terraform backend
+  displayName: Set Terraform backend
   condition: and(succeeded(), ${{ parameters.provisionStorage }})
   inputs:
     azureSubscription: ${{ parameters.TerraformBackendServiceConnection }}
@@ -69,7 +69,7 @@ steps:
     backendAzureRmKey: ${{ parameters.environment }}.tfstate
 
 - task: AzureCLI@1
-  displayName: Get ARM credentials for Terraform
+  displayName: Set Terraform credentials
   inputs:
     azureSubscription: ${{ parameters.TerraformEnvironmentServiceConnection }}
     scriptLocation: inlineScript

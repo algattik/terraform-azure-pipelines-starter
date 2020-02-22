@@ -9,17 +9,18 @@ stages:
   displayName: Plan ${{ parameters.environmentDisplayName }}
   jobs:
   - job: Terraform_Plan
-    displayName: Terraform Plan
+    displayName: Plan Terraform
     pool:
       vmImage: ubuntu-latest
     steps:
 
     - bash: |
         cp infrastructure/terraform_backend/* infrastructure/terraform
-      displayName: Copy terraform backend config to terraform directory
+      displayName: Terraform backend config
 
     - template: terraform-init-template.yml
       parameters:
+        provisionStorage: true
         TerraformDirectory: infrastructure/terraform
         environment: ${{ parameters.environment }}
 
@@ -59,7 +60,7 @@ stages:
   jobs:
   - deployment: Apply
     environment: ${{ parameters.environmentDisplayName }}
-    displayName: Terraform Apply
+    displayName: Apply Terraform
     pool:
       vmImage: ubuntu-latest
     strategy:
@@ -68,7 +69,7 @@ stages:
           steps:
 
           - task: DownloadPipelineArtifact@2
-            displayName: Download Pipeline Artifact
+            displayName: Download Terraform plan
             inputs:
               artifactName: terraform_resources_${{ parameters.environment }}
               targetPath: terraform_resources
@@ -77,7 +78,6 @@ stages:
             parameters:
               TerraformDirectory: terraform_resources
               environment: ${{ parameters.environment }}
-              provisionStorage: false
 
           # As the Terraform extension plan task doesn't support -detailed-exitcode
           # (to check if any changes are present), we define an equivalent bash
@@ -127,14 +127,14 @@ stages:
 
   - job: ReadTerraform
     dependsOn: Apply
-    displayName: Terraform outputs
+    displayName: Read Terraform outputs
     pool:
       vmImage: ubuntu-latest
     steps:
 
     - bash: |
         cp infrastructure/terraform_backend/* infrastructure/terraform
-      displayName: Copy terraform backend config to terraform directory
+      displayName: Terraform backend config
 
     - template: terraform-init-template.yml
       parameters:
@@ -144,7 +144,7 @@ stages:
     - bash: |
         set -eu
 
-        echo "Setting job variables for Terraform outputs:"
+        echo "Setting job variables from Terraform outputs:"
         terraform output -json | jq -r '
           . as $in
           | keys[]
@@ -158,10 +158,11 @@ stages:
           | @tsv'
 
       name: Outputs
-      displayName: Export terraform outputs
+      displayName: Read Terraform outputs
       workingDirectory: infrastructure/terraform
 
-  - job: UseTerraformOutputs
+  - job: DummySampleJob
+    displayName: Use Terraform outputs
     dependsOn: ReadTerraform
     variables:
       sqlserver1_host: $[ dependencies.ReadTerraform.outputs['ReadTerraform.Outputs.sqlserver1_host'] ]
