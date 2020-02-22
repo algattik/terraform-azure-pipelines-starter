@@ -20,11 +20,15 @@ steps:
     inlineScript: |
       set -eux  # fail on error
       export AZURE_STORAGE_ACCOUNT='${{ parameters.TerraformBackendStorageAccount }}'
-      container='${{ parameters.TerraformBackendStorageContainer }}'
-      if ! time az storage container exists -n "$container" -o none; then
+      if ! export AZURE_STORAGE_KEY="$(az storage account keys list --query [0].value -o tsv)"; then
         time az configure --defaults group='${{ parameters.TerraformBackendResourceGroup }}' location='${{ parameters.TerraformBackendLocation }}'
         time az group create -n '${{ parameters.TerraformBackendResourceGroup }}' -o none
         time az storage account create -n "$AZURE_STORAGE_ACCOUNT" -o none
+        export AZURE_STORAGE_KEY="$(az storage account keys list --query [0].value -o tsv)"
+      fi
+
+      container='${{ parameters.TerraformBackendStorageContainer }}'
+      if ! time az storage container exists -n "$container" -o none; then
         time az storage container create -n "$container" -o none
       fi
       blob='${{ parameters.environment }}.tfstate'
