@@ -81,6 +81,7 @@ steps:
     scriptLocation: inlineScript
     inlineScript: |
       set -eux  # fail on error
+      env #FIXME
       terraform init \
         -backend-config=storage_account_name=${{ parameters.TerraformBackendStorageAccount }} \
         -backend-config=container_name=${{ parameters.TerraformBackendStorageContainer }} \
