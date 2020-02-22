@@ -127,7 +127,7 @@ stages:
 
   - job: ReadTerraform
     dependsOn: Apply
-    displayName: Read Terraform outputs
+    displayName: Read outputs
     pool:
       vmImage: ubuntu-latest
     steps:
@@ -167,6 +167,7 @@ stages:
     variables:
       sqlserver1_host: $[ dependencies.ReadTerraform.outputs['Outputs.sqlserver1_host'] ]
       sqlserver1_user: $[ dependencies.ReadTerraform.outputs['Outputs.sqlserver1_user'] ]
+      sqlserver1_password: $[ dependencies.ReadTerraform.outputs['Outputs.sqlserver1_password'] ]
     steps:
       - bash: |
           # Dummy job showing how to consume Terraform outputs
