@@ -57,7 +57,7 @@ stages:
 - stage: Terraform_Apply_${{ parameters.environment }}
   displayName: Apply ${{ parameters.environmentDisplayName }}
   jobs:
-  - deployment: Terraform
+  - deployment: Apply
     environment: ${{ parameters.environmentDisplayName }}
     displayName: Terraform Apply
     pool:
@@ -125,33 +125,8 @@ stages:
             env:
               ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
 
-          - bash: |
-              set -eu
-              terraform output -json | jq -r '
-                . as $in
-                | keys[]
-                | ["##vso[task.setvariable variable=" + . + ";isOutput=true;isSecret=" + ($in[.].sensitive | tostring) + "]" + ($in[.].value | tostring)]
-                | @tsv'
-            name: Outputs
-            displayName: Export terraform outputs
-            workingDirectory: terraform_resources
-
-  - job: Post_terraform
-    dependsOn: Terraform
-    variables:
-      sqlserver1_host: $[ dependencies.Terraform.outputs['Terraform.Outputs.sqlserver1_host'] ]
-      sqlserver1_user: $[ dependencies.Terraform.outputs['Terraform.Outputs.sqlserver1_user'] ]
-      sqlserver1_password: $[ dependencies.Terraform.outputs['Terraform.Outputs.sqlserver1_password'] ]
-    steps:
-      - bash: |
-          DB_CONN_STRING="Server=tcp:$(sqlserver1_host);User ID=$(sqlserver1_user);Password=$(sqlserver1_password)"
-
-
-- stage: Tests_${{ parameters.environment }}
-  displayName: Test ${{ parameters.environmentDisplayName }}
-  dependsOn: Terraform_Apply_${{ parameters.environment }}
-  jobs:
-  - job: Terraform
+  - job: ReadTerraform
+    dependsOn: Apply
     displayName: Terraform outputs
     pool:
       vmImage: ubuntu-latest
@@ -168,13 +143,6 @@ stages:
 
     - bash: |
         set -eu
-        #FIXME
-        #FIXME
-        #FIXME
-        #FIXME
-        #FIXME
-
-        terraform output -json
 
         echo "Setting job variables for Terraform outputs:"
         terraform output -json | jq -r '
@@ -188,15 +156,17 @@ stages:
           | keys[]
           | ["##vso[task.setvariable variable=" + . + ";isOutput=true;isSecret=" + ($in[.].sensitive | tostring) + "]" + ($in[.].value | tostring)]
           | @tsv'
+
       name: Outputs
       displayName: Export terraform outputs
       workingDirectory: infrastructure/terraform
 
-  - job: Post_terraform
-    dependsOn: Terraform
+  - job: UseTerraformOutputs
+    dependsOn: ReadTerraform
     variables:
-      sqlserver1_host: $[ dependencies.Terraform.outputs['Terraform.Outputs.sqlserver1_host'] ]
-      sqlserver1_user: $[ dependencies.Terraform.outputs['Terraform.Outputs.sqlserver1_user'] ]
+      sqlserver1_host: $[ dependencies.ReadTerraform.outputs['ReadTerraform.Outputs.sqlserver1_host'] ]
+      sqlserver1_user: $[ dependencies.ReadTerraform.outputs['ReadTerraform.Outputs.sqlserver1_user'] ]
     steps:
       - bash: |
+          # Dummy job showing how to consume Terraform outputs
           echo DB_CONN_STRING="User ID=$(sqlserver1_user);Password=$(sqlserver1_password)"
