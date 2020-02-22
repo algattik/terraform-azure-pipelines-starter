@@ -10,6 +10,8 @@ stages:
   jobs:
   - job: Terraform_Plan
     displayName: Plan Terraform
+    # Avoid concurrent Terraform runs on PRs, which would result in failures due to exclusive lock on remote state file.
+    condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), variables['RUN_FLAG_TERRAFORM']))
     pool:
       vmImage: ubuntu-latest
     steps:
@@ -33,8 +35,6 @@ stages:
         export ARM_CLIENT_SECRET=$(ARM_CLIENT_SECRET)
         terraform plan -input=false -out=tfplan -var environment=${{ parameters.environment }} ${{ parameters.TerraformArguments }}
       displayName: Terraform plan
-      # Avoid concurrent Terraform runs on PRs, which would result in failures due to exclusive lock on remote state file.
-      condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), variables['RUN_FLAG_TERRAFORM']))
       workingDirectory: infrastructure/terraform
       env:
         ${{ parameters.TerraformEnvVariables }}
@@ -61,6 +61,7 @@ stages:
   - deployment: Apply
     environment: ${{ parameters.environmentDisplayName }}
     displayName: Apply Terraform
+    condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), variables['RUN_FLAG_TERRAFORM']))
     pool:
       vmImage: ubuntu-latest
     strategy:
@@ -103,7 +104,6 @@ stages:
                 fi
               fi
             displayName: Terraform plan
-            condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), variables['RUN_FLAG_TERRAFORM']))
             workingDirectory: terraform_resources
             env:
               ${{ parameters.TerraformEnvVariables }}
@@ -112,7 +112,6 @@ stages:
               set -eux  # ensure pipeline stops if terraform fails or diff reports a difference
               terraform show -no-color tfplan > newplan.txt
               diff -u plan.txt newplan.txt
-            condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), variables['RUN_FLAG_TERRAFORM']))
             workingDirectory: terraform_resources
             displayName: Check unchanged plan
 
@@ -120,7 +119,6 @@ stages:
               set -eu
               terraform apply -input=false -auto-approve tfplan
             displayName: Terraform apply
-            condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), variables['RUN_FLAG_TERRAFORM']))
             workingDirectory: terraform_resources
             env:
               ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
