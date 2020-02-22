@@ -92,8 +92,3 @@ steps:
         -backend-config=client_secret="$servicePrincipalKey"
     workingDirectory: ${{ parameters.TerraformDirectory }}
     addSpnToEnvironment: true
-
-- task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV1@0
-  displayName: Terraform init
-  inputs:
-    backendServiceArm: ${{ parameters.TerraformBackendServiceConnection }}
