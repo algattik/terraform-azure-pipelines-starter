@@ -120,6 +120,7 @@ stages:
               set -eu
               terraform apply -input=false -auto-approve tfplan
             displayName: Terraform apply
+            condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), variables['RUN_FLAG_TERRAFORM']))
             workingDirectory: terraform_resources
             env:
               ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
