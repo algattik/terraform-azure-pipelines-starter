@@ -18,27 +18,27 @@ steps:
     azureSubscription: ${{ parameters.TerraformBackendServiceConnection }}
     scriptLocation: inlineScript
     inlineScript: |
-      set -eu  # fail on error
+      set -eux  # fail on error
       export AZURE_STORAGE_ACCOUNT='${{ parameters.TerraformBackendStorageAccount }}'
       container='${{ parameters.TerraformBackendStorageContainer }}'
-      if ! az storage container exists -n "$container" -o none; then
-        az configure --defaults group='${{ parameters.TerraformBackendResourceGroup }}' location='${{ parameters.TerraformBackendLocation }}'
-        az group create -n '${{ parameters.TerraformBackendResourceGroup }}' -o none
-        az storage account create -n "$AZURE_STORAGE_ACCOUNT" -o none
-        az storage container create -n "$container" -o none
+      if ! time az storage container exists -n "$container" -o none; then
+        time az configure --defaults group='${{ parameters.TerraformBackendResourceGroup }}' location='${{ parameters.TerraformBackendLocation }}'
+        time az group create -n '${{ parameters.TerraformBackendResourceGroup }}' -o none
+        time az storage account create -n "$AZURE_STORAGE_ACCOUNT" -o none
+        time az storage container create -n "$container" -o none
       fi
       blob='${{ parameters.environment }}.tfstate'
-      if [[ $(az storage blob exists -c "$container" -n "$blob" --query exists) = "true" ]]; then
-        if [[ $(az storage blob show -c "$container" -n "$blob" --query "properties.lease.status=='locked'") = "true" ]]; then
+      if [[ $(time az storage blob exists -c "$container" -n "$blob" --query exists) = "true" ]]; then
+        if [[ $(time az storage blob show -c "$container" -n "$blob" --query "properties.lease.status=='locked'") = "true" ]]; then
           echo "State is leased"
-          lock_jwt=$(az storage blob show -c "$container" -n "$blob" --query metadata.terraformlockid -o tsv)
+          lock_jwt=$(time az storage blob show -c "$container" -n "$blob" --query metadata.terraformlockid -o tsv)
           if [ "$lock_jwt" != "" ]; then
             lock_json=$(base64 -d <<< "$lock_jwt")
             echo "State is locked"
             jq . <<< "$lock_json"
           fi
           if [ "${TERRAFORM_BREAK_LEASE:-}" != "" ]; then
-            az storage blob lease break -c "$container" -b "$blob"
+            time az storage blob lease break -c "$container" -b "$blob"
           else
             echo "If you're really sure you want to break the lease, rerun the pipeline with variable TERRAFORM_BREAK_LEASE set to 1."
             exit 1

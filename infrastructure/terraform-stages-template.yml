@@ -17,11 +17,10 @@ stages:
     - bash: |
         cp infrastructure/terraform_backend/* infrastructure/terraform
       displayName: Copy terraform backend config to terraform directory
-      workingDirectory: $(System.DefaultWorkingDirectory)
 
     - template: terraform-init-template.yml
       parameters:
-        TerraformDirectory: $(System.DefaultWorkingDirectory)/infrastructure/terraform
+        TerraformDirectory: infrastructure/terraform
         environment: ${{ parameters.environment }}
 
     # Using bash instead of Terraform extension because of following issues:
@@ -35,7 +34,7 @@ stages:
       displayName: Terraform plan
       # Avoid concurrent Terraform runs on PRs, which would result in failures due to exclusive lock on remote state file.
       condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), variables['RUN_FLAG_TERRAFORM']))
-      workingDirectory: $(System.DefaultWorkingDirectory)/infrastructure/terraform
+      workingDirectory: infrastructure/terraform
       env:
         ${{ parameters.TerraformEnvVariables }}
 
@@ -47,18 +46,18 @@ stages:
         # Resource providers can be > 100MB large, we don't want them in the published artifacts.
         rm -r .terraform
       displayName: Save plan text representation
-      workingDirectory: $(System.DefaultWorkingDirectory)/infrastructure/terraform
+      workingDirectory: infrastructure/terraform
 
     - task: PublishPipelineArtifact@1
       displayName: Publish Pipeline Artifact
       inputs:
-        targetPath: $(System.DefaultWorkingDirectory)/infrastructure/terraform
+        targetPath: infrastructure/terraform
         artifact: terraform_resources_${{ parameters.environment }}
 
 - stage: Terraform_Apply_${{ parameters.environment }}
   displayName: Apply ${{ parameters.environmentDisplayName }}
   jobs:
-  - deployment: Apply
+  - deployment: Terraform
     environment: ${{ parameters.environmentDisplayName }}
     displayName: Terraform Apply
     pool:
@@ -72,11 +71,11 @@ stages:
             displayName: Download Pipeline Artifact
             inputs:
               artifactName: terraform_resources_${{ parameters.environment }}
-              targetPath: $(System.DefaultWorkingDirectory)/terraform_resources
+              targetPath: terraform_resources
 
           - template: terraform-init-template.yml
             parameters:
-              TerraformDirectory: $(System.DefaultWorkingDirectory)/terraform_resources
+              TerraformDirectory: terraform_resources
               environment: ${{ parameters.environment }}
               provisionStorage: false
 
@@ -105,7 +104,7 @@ stages:
               fi
             displayName: Terraform plan
             condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), variables['RUN_FLAG_TERRAFORM']))
-            workingDirectory: $(System.DefaultWorkingDirectory)/terraform_resources
+            workingDirectory: terraform_resources
             env:
               ${{ parameters.TerraformEnvVariables }}
 
@@ -114,14 +113,14 @@ stages:
               terraform show -no-color tfplan > newplan.txt
               diff -u plan.txt newplan.txt
             condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), variables['RUN_FLAG_TERRAFORM']))
-            workingDirectory: $(System.DefaultWorkingDirectory)/terraform_resources
+            workingDirectory: terraform_resources
             displayName: Ensure plan is unchanged
 
           - bash: |
               set -eu
               terraform apply -input=false -auto-approve tfplan
             displayName: Terraform apply
-            workingDirectory: $(System.DefaultWorkingDirectory)/terraform_resources
+            workingDirectory: terraform_resources
             env:
               ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
 
@@ -132,16 +131,56 @@ stages:
                 | keys[] 
                 | ["##vso[task.setvariable variable=" + . + ";isOutput=true;isSecret=" + ($in[.].sensitive | tostring) + "]" + ($in[.].value | tostring)]
                 | @tsv'
-            name: TerraformOutputs
+            name: Outputs
             displayName: Export terraform outputs
-            workingDirectory: $(System.DefaultWorkingDirectory)/terraform_resources
+            workingDirectory: terraform_resources
 
   - job: Post_terraform
-    dependsOn: Apply
+    dependsOn: Terraform
     variables:
-      sqlserver1_host: $[ dependencies.Apply.outputs['Apply.TerraformOutputs.sqlserver1_host'] ]
-      sqlserver1_user: $[ dependencies.Apply.outputs['Apply.TerraformOutputs.sqlserver1_user'] ]
-      sqlserver1_password: $[ dependencies.Apply.outputs['Apply.TerraformOutputs.sqlserver1_password'] ]
+      sqlserver1_host: $[ dependencies.Terraform.outputs['Terraform.Outputs.sqlserver1_host'] ]
+      sqlserver1_user: $[ dependencies.Terraform.outputs['Terraform.Outputs.sqlserver1_user'] ]
+      sqlserver1_password: $[ dependencies.Terraform.outputs['Terraform.Outputs.sqlserver1_password'] ]
     steps:
       - bash: |
           DB_CONN_STRING="Server=tcp:$(sqlserver1_host);User ID=$(sqlserver1_user);Password=$(sqlserver1_password)"
+
+
+- stage: Tests_${{ parameters.environment }}
+  displayName: Test ${{ parameters.environmentDisplayName }}
+  dependsOn: Terraform_Apply_${{ parameters.environment }}
+  jobs:
+  - job: Terraform
+    displayName: Terraform outputs
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+
+    - bash: |
+        cp infrastructure/terraform_backend/* infrastructure/terraform
+      displayName: Copy terraform backend config to terraform directory
+
+    - template: terraform-init-template.yml
+      parameters:
+        TerraformDirectory: infrastructure/terraform
+        environment: ${{ parameters.environment }}
+
+    - bash: |
+        set -eu
+        terraform output -json | jq -r '
+          . as $in
+          | keys[] 
+          | ["##vso[task.setvariable variable=" + . + ";isOutput=true;isSecret=" + ($in[.].sensitive | tostring) + "]" + ($in[.].value | tostring)]
+          | @tsv'
+      name: Outputs
+      displayName: Export terraform outputs
+      workingDirectory: infrastructure/terraform
+
+  - job: Post_terraform
+    dependsOn: Terraform
+    variables:
+      sqlserver1_host: $[ dependencies.Terraform.outputs['Terraform.Outputs.sqlserver1_host'] ]
+      sqlserver1_user: $[ dependencies.Terraform.outputs['Terraform.Outputs.sqlserver1_user'] ]
+    steps:
+      - bash: |
+          echo DB_CONN_STRING="User ID=$(sqlserver1_user);Password=$(sqlserver1_password)"
