@@ -125,6 +125,7 @@ stages:
 
   - job: ReadTerraform
     dependsOn: Apply
+    condition: always()
     displayName: Read outputs
     pool:
       vmImage: ubuntu-latest
