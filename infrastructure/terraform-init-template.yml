@@ -21,11 +21,11 @@ steps:
       set -eux  # fail on error
       RG='${{ parameters.TerraformBackendResourceGroup }}'
       export AZURE_STORAGE_ACCOUNT='${{ parameters.TerraformBackendStorageAccount }}'
-      if ! export AZURE_STORAGE_KEY="$(az storage account keys list -g "$RG" "-n "$AZURE_STORAGE_ACCOUNT" --query '[0].value' -o tsv)"; then
+      if ! export AZURE_STORAGE_KEY="$(az storage account keys list -g "$RG" -n "$AZURE_STORAGE_ACCOUNT" --query '[0].value' -o tsv)"; then
         time az configure --defaults group="$RG" location='${{ parameters.TerraformBackendLocation }}'
         time az group create -n "$RG" -o none
         time az storage account create -n "$AZURE_STORAGE_ACCOUNT" -o none
-        export AZURE_STORAGE_KEY="$(az storage account keys list -g "$RG" "-n "$AZURE_STORAGE_ACCOUNT" --query '[0].value' -o tsv)"
+        export AZURE_STORAGE_KEY="$(az storage account keys list -g "$RG" -n "$AZURE_STORAGE_ACCOUNT" --query '[0].value' -o tsv)"
       fi
 
       container='${{ parameters.TerraformBackendStorageContainer }}'
