@@ -18,7 +18,7 @@ steps:
     azureSubscription: ${{ parameters.TerraformBackendServiceConnection }}
     scriptLocation: inlineScript
     inlineScript: |
-      set -eux  # fail on error
+      set -eu  # fail on error
       RG='${{ parameters.TerraformBackendResourceGroup }}'
       export AZURE_STORAGE_ACCOUNT='${{ parameters.TerraformBackendStorageAccount }}'
       export AZURE_STORAGE_KEY="$(az storage account keys list -g "$RG" -n "$AZURE_STORAGE_ACCOUNT" --query '[0].value' -o tsv)"
