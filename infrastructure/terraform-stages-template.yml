@@ -172,3 +172,4 @@ stages:
       - bash: |
           # Dummy job showing how to consume Terraform outputs
           echo DB_CONN_STRING="User ID=$(sqlserver1_user);Password=$(sqlserver1_password)"
+        displayName: Sample script
