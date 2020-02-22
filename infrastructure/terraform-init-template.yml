@@ -81,7 +81,7 @@ steps:
     scriptLocation: inlineScript
     inlineScript: |
       set -eux  # fail on error
-      env #FIXME
+      subscriptionId=$(az account show --query id -o tsv)
       terraform init \
         -backend-config=storage_account_name=${{ parameters.TerraformBackendStorageAccount }} \
         -backend-config=container_name=${{ parameters.TerraformBackendStorageContainer }} \
