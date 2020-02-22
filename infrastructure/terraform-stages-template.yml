@@ -129,7 +129,7 @@ stages:
               set -eu
               terraform output -json | jq -r '
                 . as $in
-                | keys[] 
+                | keys[]
                 | ["##vso[task.setvariable variable=" + . + ";isOutput=true;isSecret=" + ($in[.].sensitive | tostring) + "]" + ($in[.].value | tostring)]
                 | @tsv'
             name: Outputs
@@ -176,14 +176,16 @@ stages:
 
         terraform output -json
 
+        echo "Setting job variables for Terraform outputs:"
         terraform output -json | jq -r '
           . as $in
-          | keys[] 
+          | keys[]
+          | ["- " + .]
           | @tsv'
 
         terraform output -json | jq -r '
           . as $in
-          | keys[] 
+          | keys[]
           | ["##vso[task.setvariable variable=" + . + ";isOutput=true;isSecret=" + ($in[.].sensitive | tostring) + "]" + ($in[.].value | tostring)]
           | @tsv'
       name: Outputs
