@@ -9,19 +9,21 @@ stages:
   displayName: Plan ${{ parameters.environmentDisplayName }}
   jobs:
   - job: Terraform_Plan
-    displayName: Terraform Plan
+    displayName: Plan Terraform
+    # Avoid concurrent Terraform runs on PRs, which would result in failures due to exclusive lock on remote state file.
+    condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), variables['RUN_FLAG_TERRAFORM']))
     pool:
       vmImage: ubuntu-latest
     steps:
 
     - bash: |
         cp infrastructure/terraform_backend/* infrastructure/terraform
-      displayName: Copy terraform backend config to terraform directory
-      workingDirectory: $(System.DefaultWorkingDirectory)
+      displayName: Configure backend
 
     - template: terraform-init-template.yml
       parameters:
-        TerraformDirectory: $(System.DefaultWorkingDirectory)/infrastructure/terraform
+        provisionStorage: true
+        TerraformDirectory: infrastructure/terraform
         environment: ${{ parameters.environment }}
 
     # Using bash instead of Terraform extension because of following issues:
@@ -33,9 +35,7 @@ stages:
         export ARM_CLIENT_SECRET=$(ARM_CLIENT_SECRET)
         terraform plan -input=false -out=tfplan -var environment=${{ parameters.environment }} ${{ parameters.TerraformArguments }}
       displayName: Terraform plan
-      # Avoid concurrent Terraform runs on PRs, which would result in failures due to exclusive lock on remote state file.
-      condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), variables['RUN_FLAG_TERRAFORM']))
-      workingDirectory: $(System.DefaultWorkingDirectory)/infrastructure/terraform
+      workingDirectory: infrastructure/terraform
       env:
         ${{ parameters.TerraformEnvVariables }}
 
@@ -46,13 +46,13 @@ stages:
         rm tfplan
         # Resource providers can be > 100MB large, we don't want them in the published artifacts.
         rm -r .terraform
-      displayName: Save plan text representation
-      workingDirectory: $(System.DefaultWorkingDirectory)/infrastructure/terraform
+      displayName: Save plan text
+      workingDirectory: infrastructure/terraform
 
     - task: PublishPipelineArtifact@1
-      displayName: Publish Pipeline Artifact
+      displayName: Publish plan artifact
       inputs:
-        targetPath: $(System.DefaultWorkingDirectory)/infrastructure/terraform
+        targetPath: infrastructure/terraform
         artifact: terraform_resources_${{ parameters.environment }}
 
 - stage: Terraform_Apply_${{ parameters.environment }}
@@ -60,7 +60,8 @@ stages:
   jobs:
   - deployment: Apply
     environment: ${{ parameters.environmentDisplayName }}
-    displayName: Terraform Apply
+    displayName: Apply Terraform
+    condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), variables['RUN_FLAG_TERRAFORM']))
     pool:
       vmImage: ubuntu-latest
     strategy:
@@ -69,16 +70,15 @@ stages:
           steps:
 
           - task: DownloadPipelineArtifact@2
-            displayName: Download Pipeline Artifact
+            displayName: Download plan
             inputs:
               artifactName: terraform_resources_${{ parameters.environment }}
-              targetPath: $(System.DefaultWorkingDirectory)/terraform_resources
+              targetPath: terraform_resources
 
           - template: terraform-init-template.yml
             parameters:
-              TerraformDirectory: $(System.DefaultWorkingDirectory)/terraform_resources
+              TerraformDirectory: terraform_resources
               environment: ${{ parameters.environment }}
-              provisionStorage: false
 
           # As the Terraform extension plan task doesn't support -detailed-exitcode
           # (to check if any changes are present), we define an equivalent bash
@@ -104,8 +104,7 @@ stages:
                 fi
               fi
             displayName: Terraform plan
-            condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), variables['RUN_FLAG_TERRAFORM']))
-            workingDirectory: $(System.DefaultWorkingDirectory)/terraform_resources
+            workingDirectory: terraform_resources
             env:
               ${{ parameters.TerraformEnvVariables }}
 
@@ -113,35 +112,63 @@ stages:
               set -eux  # ensure pipeline stops if terraform fails or diff reports a difference
               terraform show -no-color tfplan > newplan.txt
               diff -u plan.txt newplan.txt
-            condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), variables['RUN_FLAG_TERRAFORM']))
-            workingDirectory: $(System.DefaultWorkingDirectory)/terraform_resources
-            displayName: Ensure plan is unchanged
+            workingDirectory: terraform_resources
+            displayName: Check unchanged plan
 
           - bash: |
               set -eu
               terraform apply -input=false -auto-approve tfplan
             displayName: Terraform apply
-            workingDirectory: $(System.DefaultWorkingDirectory)/terraform_resources
+            workingDirectory: terraform_resources
             env:
               ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
 
-          - bash: |
-              set -eu
-              terraform output -json | jq -r '
-                . as $in
-                | keys[] 
-                | ["##vso[task.setvariable variable=" + . + ";isOutput=true;isSecret=" + ($in[.].sensitive | tostring) + "]" + ($in[.].value | tostring)]
-                | @tsv'
-            name: TerraformOutputs
-            displayName: Export terraform outputs
-            workingDirectory: $(System.DefaultWorkingDirectory)/terraform_resources
-
-  - job: Post_terraform
+  - job: ReadTerraform
     dependsOn: Apply
+    condition: always()
+    displayName: Read outputs
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+
+    - bash: |
+        cp infrastructure/terraform_backend/* infrastructure/terraform
+      displayName: Configure backend
+
+    - template: terraform-init-template.yml
+      parameters:
+        TerraformDirectory: infrastructure/terraform
+        environment: ${{ parameters.environment }}
+
+    - bash: |
+        set -eu
+
+        echo "Setting job variables from Terraform outputs:"
+        terraform output -json | jq -r '
+          . as $in
+          | keys[]
+          | ["- " + .]
+          | @tsv'
+
+        terraform output -json | jq -r '
+          . as $in
+          | keys[]
+          | ["##vso[task.setvariable variable=" + . + ";isOutput=true;isSecret=" + ($in[.].sensitive | tostring) + "]" + ($in[.].value | tostring)]
+          | @tsv'
+
+      name: Outputs
+      displayName: Read Terraform outputs
+      workingDirectory: infrastructure/terraform
+
+  - job: DummySampleJob
+    displayName: Use Terraform outputs
+    dependsOn: ReadTerraform
     variables:
-      sqlserver1_host: $[ dependencies.Apply.outputs['Apply.TerraformOutputs.sqlserver1_host'] ]
-      sqlserver1_user: $[ dependencies.Apply.outputs['Apply.TerraformOutputs.sqlserver1_user'] ]
-      sqlserver1_password: $[ dependencies.Apply.outputs['Apply.TerraformOutputs.sqlserver1_password'] ]
+      sqlserver1_host: $[ dependencies.ReadTerraform.outputs['Outputs.sqlserver1_host'] ]
+      sqlserver1_user: $[ dependencies.ReadTerraform.outputs['Outputs.sqlserver1_user'] ]
+      sqlserver1_password: $[ dependencies.ReadTerraform.outputs['Outputs.sqlserver1_password'] ]
     steps:
       - bash: |
-          DB_CONN_STRING="Server=tcp:$(sqlserver1_host);User ID=$(sqlserver1_user);Password=$(sqlserver1_password)"
+          # Dummy job showing how to consume Terraform outputs
+          echo DB_CONN_STRING="User ID=$(sqlserver1_user);Password=$(sqlserver1_password)"
+        displayName: Sample script
