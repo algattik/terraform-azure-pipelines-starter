@@ -123,6 +123,16 @@ You can rerun the Plan stage directly in the pipeline view to produce an updated
 
 ![plan changed](/docs/images/terraform_starter/plan_changed.png)
 
+## Usage on non-master branch
+
+To avoid issues with concurrent access to the Terraform state file, the jobs running Terraform `plan` and `apply` commands
+run by default only on the `master` branch. On other branches, they are skipped by default:
+
+![run on non-master branch](/docs/images/terraform_starter/non_master_branch.png)
+
+You can set the `RUN_FLAG_TERRAFORM` variable (to any non-empty value)
+when running the pipeline, to trigger Terraform application on a non-`master` branch.
+
 ## Local development
 
 In local development, no backend is configured so a local backend is used.
