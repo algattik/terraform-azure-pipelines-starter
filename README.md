@@ -7,6 +7,8 @@ This project can be used as a starter for Azure Pipelines deploying resources on
 It includes a multi-stage pipeline allowing to manually review and approve infrastructure
 changes before they are deployed.
 
+![pipeline jobs](/docs/images/terraform_starter/pipeline_jobs.png)
+
 The Terraform definition only deploys a resource group and two empty SQL Server instances
 (to illustrate two different approaches to managing secrets, in this case the SQL Server
 password).
