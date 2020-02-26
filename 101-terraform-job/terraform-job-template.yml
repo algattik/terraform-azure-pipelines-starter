@@ -47,7 +47,7 @@ jobs:
 
   - template: ../infrastructure/terraform-outputs-template.yml
     parameters:
-      TerraformDirectory: 301-deploy-agent-vms/terraform
+      TerraformDirectory: 101-terraform-job/terraform
 
   - bash: |
       # Dummy job showing how to consume Terraform outputs

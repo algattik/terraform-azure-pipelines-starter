@@ -144,7 +144,7 @@ stages:
 
     - template: ../infrastructure/terraform-outputs-template.yml
       parameters:
-        TerraformDirectory: 301-deploy-agent-vms/terraform
+        TerraformDirectory: 201-plan-apply-stages/terraform
  
   - job: DummySampleJob
     displayName: Use Terraform outputs
