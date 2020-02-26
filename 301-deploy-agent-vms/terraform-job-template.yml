@@ -53,6 +53,7 @@ jobs:
   variables:
     pool_name: $[ dependencies.ReadTerraform.outputs['Outputs.pool_name'] ]
   pool: $(pool_name)
+  steps:
   - bash: |
       echo This is running on agent
       hostname
