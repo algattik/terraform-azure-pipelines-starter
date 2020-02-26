@@ -3,6 +3,17 @@
 #strict mode, fail on error
 set -euo pipefail
 
+
+test -n "$1" || "The argument az_devops_url must be provided"
+az_devops_url="$1"
+test -n "$2" || "The argument az_devops_pat must be provided"
+az_devops_pat="$2"
+test -n "$3" || "The argument az_devops_agent_pool must be provided"
+az_devops_agent_pool="$3"
+test -n "$4" || "The argument az_devops_agents_per_vm must be provided"
+az_devops_agents_per_vm="$4"
+
+
 echo "start"
 
 echo "install Ubuntu packages"
@@ -46,7 +57,7 @@ if ! test -e "host_uuid.txt"; then
 fi
 host_id=$(cat host_uuid.txt)
 
-for agent_num in $(seq 1 $4); do
+for agent_num in $(seq 1 $az_devops_agents_per_vm); do
   agent_dir="agent-$agent_num"
   mkdir -p "$agent_dir"
   pushd "$agent_dir"
@@ -57,7 +68,7 @@ for agent_num in $(seq 1 $4); do
     echo "extracted"
     ./bin/installdependencies.sh
     echo "dependencies installed"
-    sudo -u azuredevopsuser ./config.sh --unattended --url "$1" --auth pat --token "$2" --pool "$3" --agent "$agent_id" --acceptTeeEula --work ./_work --runAsService
+    sudo -u azuredevopsuser ./config.sh --unattended --url "$az_devops_url" --auth pat --token "$az_devops_pat" --pool "$az_devops_agent_pool" --agent "$agent_id" --acceptTeeEula --work ./_work --runAsService
     echo "configuration done"
     ./svc.sh install
     echo "service installed"
