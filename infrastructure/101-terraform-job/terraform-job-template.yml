@@ -40,10 +40,12 @@ jobs:
     vmImage: ubuntu-latest
   steps:
 
-  - template: ../terraform-outputs-template.yml
+  - template: ../terraform-init-template.yml
     parameters:
       TerraformDirectory: infrastructure/terraform
       environment: ${{ parameters.environment }}
+
+  - template: ../terraform-outputs-template.yml
 
 - job: DummySampleJob
   displayName: Use Terraform outputs
