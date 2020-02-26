@@ -5,7 +5,7 @@ trigger:
     - master
   paths:
     include:
-    - infrastructure/
+    - 101-terraform-job/
 
 variables:
 - group: terraform-secrets

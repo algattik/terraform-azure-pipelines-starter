@@ -1,3 +1,6 @@
+parameters:
+  TerraformDirectory:
+
 steps:
 - bash: |
     set -eu
@@ -17,4 +20,4 @@ steps:
 
   name: Outputs
   displayName: Read Terraform outputs
-  workingDirectory: infrastructure/terraform
+  workingDirectory: ${{ parameters.TerraformDirectory }}

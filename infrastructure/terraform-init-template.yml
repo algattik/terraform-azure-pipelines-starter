@@ -2,6 +2,7 @@ parameters:
   environment: stage
   provisionStorage: false
   TerraformVersion: 0.12.21
+  TerraformDirectory:
   TerraformBackendServiceConnection: Terraform
   TerraformEnvironmentServiceConnection: Terraform
   TerraformBackendResourceGroup: terraform

@@ -17,14 +17,14 @@ stages:
     steps:
 
     - bash: |
-        cp infrastructure/terraform_backend/* infrastructure/terraform
+        cp terraform_backend/* terraform
       displayName: Configure backend
       workingDirectory: 201-plan-apply-stages
 
-    - template: ../terraform-init-template.yml
+    - template: ../infrastructure/terraform-init-template.yml
       parameters:
         provisionStorage: true
-        TerraformDirectory: 201-plan-apply-stages/infrastructure/terraform
+        TerraformDirectory: 201-plan-apply-stages/terraform
         environment: ${{ parameters.environment }}
 
     # Using bash instead of Terraform extension because of following issues:
@@ -36,7 +36,7 @@ stages:
         export ARM_CLIENT_SECRET=$(ARM_CLIENT_SECRET)
         terraform plan -input=false -out=tfplan -var environment=${{ parameters.environment }} ${{ parameters.TerraformArguments }}
       displayName: Terraform plan
-      workingDirectory: 201-plan-apply-stages/infrastructure/terraform
+      workingDirectory: 201-plan-apply-stages/terraform
       env:
         ${{ parameters.TerraformEnvVariables }}
 
@@ -48,12 +48,12 @@ stages:
         # Resource providers can be > 100MB large, we don't want them in the published artifacts.
         rm -r .terraform
       displayName: Save plan text
-      workingDirectory: 201-plan-apply-stages/infrastructure/terraform
+      workingDirectory: 201-plan-apply-stages/terraform
 
     - task: PublishPipelineArtifact@1
       displayName: Publish plan artifact
       inputs:
-        targetPath: 201-plan-apply-stages/infrastructure/terraform
+        targetPath: 201-plan-apply-stages/terraform
         artifact: terraform_resources_${{ parameters.environment }}
 
 - stage: Terraform_Apply_${{ parameters.environment }}
@@ -76,7 +76,7 @@ stages:
               artifactName: terraform_resources_${{ parameters.environment }}
               targetPath: terraform_resources
 
-          - template: ../terraform-init-template.yml
+          - template: ../infrastructure/terraform-init-template.yml
             parameters:
               TerraformDirectory: terraform_resources
               environment: ${{ parameters.environment }}
@@ -133,16 +133,18 @@ stages:
     steps:
 
     - bash: |
-        cp infrastructure/terraform_backend/* infrastructure/terraform
+        cp terraform_backend/* terraform
       displayName: Configure backend
       workingDirectory: 201-plan-apply-stages
 
-    - template: ../terraform-init-template.yml
+    - template: ../infrastructure/terraform-init-template.yml
       parameters:
-        TerraformDirectory: 201-plan-apply-stages/infrastructure/terraform
+        TerraformDirectory: 201-plan-apply-stages/terraform
         environment: ${{ parameters.environment }}
 
-    - template: ../terraform-outputs-template.yml
+    - template: ../infrastructure/terraform-outputs-template.yml
+      parameters:
+        TerraformDirectory: 301-deploy-agent-vms/terraform
  
   - job: DummySampleJob
     displayName: Use Terraform outputs

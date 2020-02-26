@@ -5,7 +5,7 @@ trigger:
     - master
   paths:
     include:
-    - infrastructure/
+    - 201-plan-apply-stages/
 
 variables:
 - group: terraform-secrets
