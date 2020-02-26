@@ -33,7 +33,7 @@ jobs:
       ${{ parameters.TerraformEnvVariables }}
 
 - job: ReadTerraform
-  displayName: Use Terraform outputs
+  displayName: Read Terraform outputs
   dependsOn: Terraform
   condition: always()
   steps:
@@ -48,7 +48,7 @@ jobs:
       TerraformDirectory: 301-deploy-agent-vms/terraform
 
 - job: DummySampleJob
-  displayName: Use Terraform outputs
+  displayName: Run Agent job
   dependsOn: ReadTerraform
   variables:
     pool_name: $[ dependencies.ReadTerraform.outputs['Outputs.pool_name'] ]

@@ -14,8 +14,8 @@ jobs:
 
 - template: terraform-job-template.yml
   parameters:
-    environment: test
-    environmentDisplayName: Test
+    environment: dev
+    environmentDisplayName: dev
     # Pass variables as environment variables.
     # Terraform recognizes TF_VAR prefixed environment variables.
     TerraformEnvVariables:
