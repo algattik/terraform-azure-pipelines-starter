@@ -12,7 +12,7 @@ steps:
     terraform output -json | jq -r '
       . as $in
       | keys[]
-      | ["##vso[task.setvariable variable=" + . + ";isOutput=true;isSecret=" + ($in[.].sensitive | tostring) + "]" + ($in[.].value | tostring)]
+      | ["##vso[task.setvariable variable=" + . + ";isSecret=" + ($in[.].sensitive | tostring) + "]" + ($in[.].value | tostring)]
       | @tsv'
 
   name: Outputs

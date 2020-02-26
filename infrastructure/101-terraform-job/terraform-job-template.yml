@@ -47,13 +47,6 @@ jobs:
 
   - template: ../terraform-outputs-template.yml
 
-- job: DummySampleJob
-  displayName: Use Terraform outputs
-  dependsOn: ReadTerraform
-  variables:
-    subscription_id: $[ dependencies.ReadTerraform.outputs['Outputs.subscription_id'] ]
-    resource_group_name: $[ dependencies.ReadTerraform.outputs['Outputs.resource_group_name'] ]
-  steps:
   - bash: |
       # Dummy job showing how to consume Terraform outputs
       echo Subscription ID: $(subscription_id)
