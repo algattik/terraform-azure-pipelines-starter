@@ -33,9 +33,9 @@ jobs:
       ${{ parameters.TerraformEnvVariables }}
 
 - job: ReadTerraform
+  displayName: Use Terraform outputs
   dependsOn: Terraform
   condition: always()
-  displayName: Read outputs
   pool:
     vmImage: ubuntu-latest
   steps:
