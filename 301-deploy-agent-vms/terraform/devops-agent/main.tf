@@ -121,7 +121,7 @@ resource "azurerm_virtual_machine" "devops" {
   os_profile {
     computer_name  = "AzureDevOps"
     admin_username = "azuredevopsuser"
-    admin_password = random_password.agent_vms
+    admin_password = random_password.agent_vms.result
   }
 
   os_profile_linux_config {
