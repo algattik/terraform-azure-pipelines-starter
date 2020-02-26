@@ -86,6 +86,17 @@ resource "azurerm_network_interface" "devops" {
 }
 
 # Create virtual machine
+
+resource "random_password" "agent_vms" {
+  length = 24
+  special = true
+  override_special = "!@#$%&*()-_=+[]:?"
+  min_upper = 1
+  min_lower = 1
+  min_numeric = 1
+  min_special = 1
+}
+
 resource "azurerm_virtual_machine" "devops" {
   name                  = "vm${var.appname}devops${var.environment}-${format("%03d", count.index + 1)}"
   location              = var.location
@@ -113,7 +124,8 @@ resource "azurerm_virtual_machine" "devops" {
   }
 
   os_profile_linux_config {
-    disable_password_authentication = true
+    disable_password_authentication = false
+    admin_password = random_password.agent_vms
 
     dynamic "ssh_keys" {
       for_each = var.az_devops_agent_sshkeys
