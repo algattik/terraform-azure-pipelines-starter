@@ -121,11 +121,11 @@ resource "azurerm_virtual_machine" "devops" {
   os_profile {
     computer_name  = "AzureDevOps"
     admin_username = "azuredevopsuser"
+    admin_password = random_password.agent_vms
   }
 
   os_profile_linux_config {
     disable_password_authentication = false
-    admin_password = random_password.agent_vms
 
     dynamic "ssh_keys" {
       for_each = var.az_devops_agent_sshkeys
