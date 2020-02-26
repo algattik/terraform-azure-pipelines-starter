@@ -10,11 +10,12 @@ trigger:
 variables:
 - group: terraform-secrets
 
-jobs:
+stages:
 
-- template: terraform-job-template.yml
+- template: terraform-stages-template.yml
   parameters:
     environment: dev
+    environmentDisplayName: Dev
     # Pass variables as environment variables.
     # Terraform recognizes TF_VAR prefixed environment variables.
     TerraformEnvVariables:
