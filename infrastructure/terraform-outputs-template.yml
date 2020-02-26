@@ -1,0 +1,25 @@
+
+  - template: terraform-init-template.yml
+    parameters:
+      TerraformDirectory: infrastructure/terraform
+      environment: ${{ parameters.environment }}
+
+  - bash: |
+      set -eu
+
+      echo "Setting job variables from Terraform outputs:"
+      terraform output -json | jq -r '
+        . as $in
+        | keys[]
+        | ["- " + .]
+        | @tsv'
+
+      terraform output -json | jq -r '
+        . as $in
+        | keys[]
+        | ["##vso[task.setvariable variable=" + . + ";isOutput=true;isSecret=" + ($in[.].sensitive | tostring) + "]" + ($in[.].value | tostring)]
+        | @tsv'
+
+    name: Outputs
+    displayName: Read Terraform outputs
+    workingDirectory: infrastructure/terraform

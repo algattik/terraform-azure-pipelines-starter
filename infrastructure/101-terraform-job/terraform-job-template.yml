@@ -1,0 +1,59 @@
+parameters:
+  environment: test
+  TerraformArguments: ''
+  TerraformEnvVariables:
+
+jobs:
+
+- job: Terraform
+  displayName: Terraform
+  # Avoid concurrent Terraform runs on PRs, which would result in failures due to exclusive lock on remote state file.
+  condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), variables['RUN_FLAG_TERRAFORM']))
+  pool:
+    vmImage: ubuntu-latest
+  steps:
+
+  - template: ../terraform-init-template.yml
+    parameters:
+      provisionStorage: true
+      TerraformDirectory: infrastructure/terraform
+      environment: ${{ parameters.environment }}
+
+  # Using bash instead of Terraform extension because of following issues:
+  # - https://github.com/microsoft/azure-pipelines-extensions/issues/748
+  # - https://github.com/microsoft/azure-pipelines-extensions/issues/725
+  # - https://github.com/microsoft/azure-pipelines-extensions/issues/747
+  - bash: |
+      set -eu
+      export ARM_CLIENT_SECRET=$(ARM_CLIENT_SECRET)
+      terraform apply -input=false -auto-approve -var environment=${{ parameters.environment }} ${{ parameters.TerraformArguments }}
+    displayName: Terraform apply
+    workingDirectory: infrastructure/terraform
+    env:
+      ${{ parameters.TerraformEnvVariables }}
+
+- job: ReadTerraform
+  dependsOn: Terraform
+  condition: always()
+  displayName: Read outputs
+  pool:
+    vmImage: ubuntu-latest
+  steps:
+
+  - template: ../terraform-outputs-template.yml
+    parameters:
+      TerraformDirectory: infrastructure/terraform
+      environment: ${{ parameters.environment }}
+
+- job: DummySampleJob
+  displayName: Use Terraform outputs
+  dependsOn: ReadTerraform
+  variables:
+    subscription_id: $[ dependencies.ReadTerraform.outputs['Outputs.subscription_id'] ]
+    resource_group_name: $[ dependencies.ReadTerraform.outputs['Outputs.resource_group_name'] ]
+  steps:
+  - bash: |
+      # Dummy job showing how to consume Terraform outputs
+      echo Subscription ID: $(subscription_id)
+      echo Resource group: $(resource_group_name)
+    displayName: Sample script

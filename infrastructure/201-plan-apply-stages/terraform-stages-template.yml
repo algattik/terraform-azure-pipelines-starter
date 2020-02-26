@@ -20,7 +20,7 @@ stages:
         cp infrastructure/terraform_backend/* infrastructure/terraform
       displayName: Configure backend
 
-    - template: terraform-init-template.yml
+    - template: ../terraform-init-template.yml
       parameters:
         provisionStorage: true
         TerraformDirectory: infrastructure/terraform
@@ -75,7 +75,7 @@ stages:
               artifactName: terraform_resources_${{ parameters.environment }}
               targetPath: terraform_resources
 
-          - template: terraform-init-template.yml
+          - template: ../terraform-init-template.yml
             parameters:
               TerraformDirectory: terraform_resources
               environment: ${{ parameters.environment }}
@@ -135,31 +135,11 @@ stages:
         cp infrastructure/terraform_backend/* infrastructure/terraform
       displayName: Configure backend
 
-    - template: terraform-init-template.yml
+    - template: ../terraform-outputs-template.yml
       parameters:
         TerraformDirectory: infrastructure/terraform
         environment: ${{ parameters.environment }}
-
-    - bash: |
-        set -eu
-
-        echo "Setting job variables from Terraform outputs:"
-        terraform output -json | jq -r '
-          . as $in
-          | keys[]
-          | ["- " + .]
-          | @tsv'
-
-        terraform output -json | jq -r '
-          . as $in
-          | keys[]
-          | ["##vso[task.setvariable variable=" + . + ";isOutput=true;isSecret=" + ($in[.].sensitive | tostring) + "]" + ($in[.].value | tostring)]
-          | @tsv'
-
-      name: Outputs
-      displayName: Read Terraform outputs
-      workingDirectory: infrastructure/terraform
-
+ 
   - job: DummySampleJob
     displayName: Use Terraform outputs
     dependsOn: ReadTerraform
