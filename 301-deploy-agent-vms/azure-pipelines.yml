@@ -21,4 +21,4 @@ stages:
     TerraformEnvVariables:
       TF_VAR_az_devops_url: $(System.TeamFoundationCollectionUri)
       TF_VAR_az_devops_pat: $(AGENT_POOL_MANAGE_PAT_TOKEN)
-      TF_VAR_az_devops_agent_pool: mypool
+      TF_VAR_az_devops_agent_pool: starterpool

@@ -30,6 +30,14 @@ apt-get install -y --no-install-recommends \
         apt-transport-https \
         docker.io
 
+
+echo "Creating agent pool if needed, and validating PAT token"
+
+if ! curl -u ":$az_devops_pat" "$az_devops_url/_apis/distributedtask/pools?poolName=mypool3&api-version=5.1 | jq -e '.count>=0'; then
+    curl -u ":$az_devops_pat" "$az_devops_url/_apis/distributedtask/pools?api-version=5.1 -H "Content-Type:application/json" -d '{"name":"'"$az_devops_agent_pool"'"}'
+fi
+
+
 echo "Allowing agent to run docker"
 
 usermod -aG docker azuredevopsuser
@@ -48,7 +56,7 @@ AGENTRELEASE="$(curl -s https://api.github.com/repos/Microsoft/azure-pipelines-a
 AGENTURL="https://vstsagentpackage.azureedge.net/agent/${AGENTRELEASE}/vsts-agent-linux-x64-${AGENTRELEASE}.tar.gz"
 echo "Release "${AGENTRELEASE}" appears to be latest" 
 echo "Downloading..."
-wget -O agent_package.tar.gz ${AGENTURL} 
+wget -q -O agent_package.tar.gz ${AGENTURL} 
 
 # Generate random prefix for agent names
 if ! test -e "host_uuid.txt"; then
