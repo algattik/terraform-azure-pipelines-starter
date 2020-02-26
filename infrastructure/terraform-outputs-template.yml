@@ -1,4 +1,4 @@
-tasks:
+steps:
 - bash: |
     set -eu
 
