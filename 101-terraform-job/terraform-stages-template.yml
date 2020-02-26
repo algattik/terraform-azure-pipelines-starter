@@ -36,7 +36,6 @@ stages:
       env:
         ${{ parameters.TerraformEnvVariables }}
 
-stages:
 - stage: PostTerraform_${{ parameters.environment }}
   displayName: PostTerraform ${{ parameters.environmentDisplayName }}
   pool:
