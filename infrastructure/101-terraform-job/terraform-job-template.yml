@@ -16,7 +16,7 @@ jobs:
   - template: ../terraform-init-template.yml
     parameters:
       provisionStorage: true
-      TerraformDirectory: infrastructure/terraform
+      TerraformDirectory: 101-terraform-job/infrastructure/terraform
       environment: ${{ parameters.environment }}
 
   # Using bash instead of Terraform extension because of following issues:
@@ -28,7 +28,7 @@ jobs:
       export ARM_CLIENT_SECRET=$(ARM_CLIENT_SECRET)
       terraform apply -input=false -auto-approve -var environment=${{ parameters.environment }} ${{ parameters.TerraformArguments }}
     displayName: Terraform apply
-    workingDirectory: infrastructure/terraform
+    workingDirectory: 101-terraform-job/infrastructure/terraform
     env:
       ${{ parameters.TerraformEnvVariables }}
 
@@ -42,7 +42,7 @@ jobs:
 
   - template: ../terraform-init-template.yml
     parameters:
-      TerraformDirectory: infrastructure/terraform
+      TerraformDirectory: 101-terraform-job/infrastructure/terraform
       environment: ${{ parameters.environment }}
 
   - template: ../terraform-outputs-template.yml
