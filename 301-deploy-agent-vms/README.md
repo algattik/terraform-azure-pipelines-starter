@@ -41,3 +41,5 @@ The pipeline configures the agent VMs to automatically shutdown daily at 23:00 U
 To use a different schedule, change `TF_VAR_az_devops_agent_vm_shutdown_time`
 in [azure-pipelines.yml](azure-pipelines.yml),
 or remove that line completely to disable automatic shutdown.
+
+The pipeline contains a task to start up the agent VMs again before running the agent job.
