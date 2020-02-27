@@ -34,12 +34,11 @@ resource "azurerm_storage_container" "devops" {
 }
 
 resource "azurerm_storage_blob" "devops" {
-  name                   = "devops_agent_init.sh"
+  name                   = "devops_agent_init-{md5(file("${path.module}/devops_agent_init.sh"))}.sh"
   storage_account_name   = azurerm_storage_account.devops.name
   storage_container_name = azurerm_storage_container.devops.name
   type                   = "Block"
   source                 = "${path.module}/devops_agent_init.sh"
-  content_md5            = md5(file("${path.module}/devops_agent_init.sh"))
 }
 
 data "azurerm_storage_account_blob_container_sas" "devops_agent_init" {
@@ -159,7 +158,7 @@ resource "azurerm_virtual_machine_extension" "devops" {
   })
   protected_settings = jsonencode({
   "fileUris": ["${azurerm_storage_blob.devops.url}${data.azurerm_storage_account_blob_container_sas.devops_agent_init.sas}"],
-  "commandToExecute": "bash devops_agent_init.sh '${var.az_devops_url}' '${var.az_devops_pat}' '${var.az_devops_agent_pool}' '${var.az_devops_agents_per_vm}'"
+  "commandToExecute": "bash ${azurerm_storage_blob.devops.name} '${var.az_devops_url}' '${var.az_devops_pat}' '${var.az_devops_agent_pool}' '${var.az_devops_agents_per_vm}'"
   })
   count = var.az_devops_agent_vm_count
 }
