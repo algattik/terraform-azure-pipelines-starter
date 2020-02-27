@@ -205,6 +205,9 @@ The pipelines contain a sample job that consumes those variables:
 
 ![output variables](/docs/images/terraform_starter/output_variables.png)
 
+- For example, in the template [301-deploy-agent-vms](301-deploy-agent-vms), the Terraform config has an output named [agent_vm_ids](301-deploy-agent-vms/terraform/outputs.tf). In the subsequent task used
+we use the bash variable [AGENT_VM_IDS](301-deploy-agent-vms/terraform-stages-template.yml) to pass the list of agent VMs to the `az start` command.
+
 This mechanism is useful for using generated resource names, access keys,
 and even [entire kube_config files](https://www.terraform.io/docs/providers/azurerm/r/kubernetes_cluster.html#kube_config_raw) (for Azure Kubernetes Service)
 in downstream testing or continuous delivery jobs.
