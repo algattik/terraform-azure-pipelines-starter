@@ -11,14 +11,14 @@ This project can be used as a starter for Azure Pipelines deploying resources on
 The first template shows how to build an environment from Terraform configuration, and run
 a subsequent job configured from Terraform outputs.
 
-[101-terraform-job](101-terraform-job)
+[101-terraform-job: Basic Terraform job](101-terraform-job)
 
 ## 201 Separate Plan and Apply stages
 
 The next template shows how to build a multi-stage pipeline
 allowing to manually review and approve infrastructure changes before they are deployed.
 
-[201-plan-apply-stages](201-plan-apply-stages)
+[201-plan-apply-stages: Separate Plan and Apply stages](201-plan-apply-stages)
 
 ![pipeline jobs](docs/images/terraform_starter/pipeline_stage_waiting.png)
 
@@ -26,6 +26,9 @@ allowing to manually review and approve infrastructure changes before they are d
 
 The next template shows how to use Terraform to deploy a pool of agent VMs on which to run
 subsequent jobs.
+
+[301-deploy-agent-vms: Deploy hosted agent VMs](301-deploy-agent-vms)
+
 
 # How to use the templates
 

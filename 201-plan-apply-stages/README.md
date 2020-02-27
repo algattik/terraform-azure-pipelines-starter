@@ -21,11 +21,13 @@ When the project is run in Azure DevOps, however, the pipeline adds the
 directory to enable the Azure Storage shared backend for additional resiliency.
 See the Terraform documentation to understand [why a state store is needed](https://www.terraform.io/docs/state/purpose.html).
 
-## Using the template
+## Walkthrough
 
-To use the template, follow the section How to use the templates in the main README.md
-file.
+### Using the template
 
+To use the template, follow the section
+[How to use the templates](/README.md#how-to-use-the-templates)
+in the main README file.
 
 ### Manual approvals
 
@@ -47,9 +49,6 @@ Define environment approvals. If you want to allow anyone out of a group a peopl
 ![environment approval](/docs/images/terraform_starter/environment_approval.png)
 
 Repeat those steps for an environment named `QA`.
-
-
-
 
 Under Library, create a Variable Group named `terraform-secrets`. Create a secret
 named `SQL_PASSWORD` and give it a unique value (e.g. `Strong_Passw0rd!`). Make

@@ -11,10 +11,13 @@ a subsequent job configured from Terraform outputs.
 The Terraform definition only deploys an empty resource group.
 You can extend the definition with your custom infrastructure, such as Web Apps.
 
-## Using the template
+## Walkthrough
 
-To use the template, follow the section How to use the templates in the main README.md
-file.
+### Using the template
+
+To use the template, follow the section
+[How to use the templates](/README.md#how-to-use-the-templates)
+in the main README file.
 
 ## Next steps
 
