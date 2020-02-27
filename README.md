@@ -13,6 +13,8 @@ a subsequent job configured from Terraform outputs.
 
 [101-terraform-job: Basic Terraform job](101-terraform-job)
 
+![pipeline job](/docs/images/terraform_starter/101-terraform-job.png)
+
 ## 201 Separate Plan and Apply stages
 
 The next template shows how to build a multi-stage pipeline
