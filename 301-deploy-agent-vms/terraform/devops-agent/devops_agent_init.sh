@@ -4,6 +4,9 @@
 set -euo pipefail
 
 
+echo MSG1
+echo MSG2 >&2
+
 test -n "$1" || "The argument az_devops_url must be provided"
 az_devops_url="$1"
 test -n "$2" || "The argument az_devops_pat must be provided"
@@ -33,8 +36,8 @@ apt-get install -y --no-install-recommends \
 
 echo "Creating agent pool if needed, and validating PAT token"
 
-if ! curl -u ":$az_devops_pat" "$az_devops_url/_apis/distributedtask/pools?poolName=mypool3&api-version=5.1 | jq -e '.count>=0'; then
-    curl -u ":$az_devops_pat" "$az_devops_url/_apis/distributedtask/pools?api-version=5.1 -H "Content-Type:application/json" -d '{"name":"'"$az_devops_agent_pool"'"}'
+if ! curl -fu ":$az_devops_pat" "$az_devops_url/_apis/distributedtask/pools?poolName=mypool3&api-version=5.1 | jq -e '.count>=0'; then
+    curl -fu ":$az_devops_pat" "$az_devops_url/_apis/distributedtask/pools?api-version=5.1 -H "Content-Type:application/json" -d '{"name":"'"$az_devops_agent_pool"'"}'
 fi
 
 
