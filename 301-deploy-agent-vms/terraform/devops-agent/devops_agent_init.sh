@@ -25,7 +25,7 @@ echo "install Ubuntu packages"
 # configure apt to not require confirmation (assume the -y argument by default)
 export DEBIAN_FRONTEND=noninteractive
 echo 'APT::Get::Assume-Yes "true";' > /etc/apt/apt.conf.d/90assumeyes
-echo 'Dpkg::Progress-Fancy "1";' > /etc/apt/apt.conf.d/99progressbar
+echo 'Dpkg::Use-Pty "0";' > /etc/apt/apt.conf.d/00usepty
 
 
 apt-get update
@@ -70,6 +70,7 @@ if ! curl -fu ":$az_devops_pat" "$az_devops_url/_apis/distributedtask/pools?pool
     echo "Creating agent pool"
     curl -fu ":$az_devops_pat" "$az_devops_url/_apis/distributedtask/pools?api-version=5.1 -H "Content-Type:application/json" -d '{"name":"'"$az_devops_agent_pool"'"}'
 fi
+exit 1
 
 
 for agent_num in $(seq 1 $az_devops_agents_per_vm); do
