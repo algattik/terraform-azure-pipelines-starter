@@ -34,7 +34,7 @@ resource "azurerm_storage_container" "devops" {
 }
 
 resource "azurerm_storage_blob" "devops" {
-  name                   = "devops_agent_init-{md5(file("${path.module}/devops_agent_init.sh"))}.sh"
+  name                   = "devops_agent_init-${md5(file("${path.module}/devops_agent_init.sh"))}.sh"
   storage_account_name   = azurerm_storage_account.devops.name
   storage_container_name = azurerm_storage_container.devops.name
   type                   = "Block"
