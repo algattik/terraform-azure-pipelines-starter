@@ -70,8 +70,6 @@ if ! curl -fu ":$az_devops_pat" "$az_devops_url/_apis/distributedtask/pools?pool
     echo "Creating agent pool"
     curl -fu ":$az_devops_pat" "$az_devops_url/_apis/distributedtask/pools?api-version=5.1" -H "Content-Type:application/json" -d '{"name":"'"$az_devops_agent_pool"'"}'
 fi
-exit 1
-
 
 for agent_num in $(seq 1 $az_devops_agents_per_vm); do
   agent_dir="agent-$agent_num"
