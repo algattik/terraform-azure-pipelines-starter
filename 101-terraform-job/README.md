@@ -6,7 +6,7 @@ This template includes a multi-stage pipeline that deploys
 an environment from Terraform configuration, and run
 a subsequent job configured from Terraform outputs.
 
-![pipeline jobs](/docs/images/101-terraform-job.png)
+![pipeline jobs](/docs/images/terraform-starter/101-terraform-job.png)
 
 The Terraform definition only deploys an empty resource group.
 You can extend the definition with your custom infrastructure, such as Web Apps.

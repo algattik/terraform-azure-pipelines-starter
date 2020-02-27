@@ -4,7 +4,7 @@
 
 This template shows how to use Terraform to deploy a pool of agent VMs on which a subsequent job is run.
 
-![agent pool](/docs/images/301-agent-pool.png)
+![agent pool](/docs/images/terraform-starter/301-agent-pool.png)
 
 The Terraform definition does not contain any other resources.
 You can extend the definition with your custom infrastructure, such as Web Apps.
@@ -21,7 +21,7 @@ Name the pool `starterpool`.
 In Azure DevOps, [create a PAT token](https://docs.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate?view=azure-devops&tabs=preview-page).
 Click on *Show all scopes* and grant the token *Read and Manage* permissions on *Agent Pools*.
 
-![PAT token](/docs/images/301-pat-token.png)
+![PAT token](/docs/images/terraform-starter/301-pat-token.png)
 
 Under Library, create a Variable Group named `terraform-secrets`. Create a secret
 named `AGENT_POOL_MANAGE_PAT_TOKEN` and paste the token value

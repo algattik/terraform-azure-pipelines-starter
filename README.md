@@ -27,8 +27,9 @@ allowing to manually review and approve infrastructure changes before they are d
 The next template shows how to use Terraform to deploy a pool of agent VMs on which to run
 subsequent jobs.
 
-[301-deploy-agent-vms: Deploy hosted agent VMs](301-deploy-agent-vms)
+![agent job](/docs/images/terraform-starter/301-agent-job.png)
 
+[301-deploy-agent-vms: Deploy hosted agent VMs](301-deploy-agent-vms)
 
 # How to use the templates
 
