@@ -61,7 +61,8 @@ stages:
         azureSubscription: Terraform
         scriptLocation: inlineScript
         inlineScript: |
-          az vm start --ids $(echo $AGENT_VM_IDS  | jq -r '.[]') -o none
+          set -eux  # fail on error
+          az vm start --ids $(echo $AGENT_VM_IDS | jq -r '.[]') -o none
 
   - job: DummySampleJob
     displayName: Run Agent job
