@@ -66,7 +66,7 @@ host_id=$(cat host_uuid.txt)
 
 echo "Creating agent pool if needed, and validating PAT token"
 
-if ! curl -fu ":$az_devops_pat" "$az_devops_url/_apis/distributedtask/pools?poolName=mypool3&api-version=5.1" | jq -e '.count>=0'; then
+if ! curl -fu ":$az_devops_pat" "$az_devops_url/_apis/distributedtask/pools?poolName=$az_devops_agent_pool&api-version=5.1" | jq -e '.count>=0'; then
     echo "Creating agent pool"
     curl -fu ":$az_devops_pat" "$az_devops_url/_apis/distributedtask/pools?api-version=5.1" -H "Content-Type:application/json" -d '{"name":"'"$az_devops_agent_pool"'"}'
 fi
