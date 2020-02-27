@@ -39,6 +39,7 @@ resource "azurerm_storage_blob" "devops" {
   storage_container_name = azurerm_storage_container.devops.name
   type                   = "Block"
   source                 = "${path.module}/devops_agent_init.sh"
+  content_md5            = md5(file("${path.module}/devops_agent_init.sh"))
 }
 
 data "azurerm_storage_account_blob_container_sas" "devops_agent_init" {
@@ -154,7 +155,7 @@ resource "azurerm_virtual_machine_extension" "devops" {
   #timestamp: use this field only to trigger a re-run of the script by changing value of this field.
   #           Any integer value is acceptable; it must only be different than the previous value.
   settings = jsonencode({
-    "timestamp" : 2
+    "timestamp" : 1
   })
   protected_settings = jsonencode({
   "fileUris": ["${azurerm_storage_blob.devops.url}${data.azurerm_storage_account_blob_container_sas.devops_agent_init.sas}"],
