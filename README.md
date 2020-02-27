@@ -4,6 +4,8 @@
 
 This project can be used as a starter for Azure Pipelines deploying resources on Terraform.
 
+![pipeline jobs](/docs/images/terraform_starter/pipeline_jobs.png)
+
 ## 101 Basic Terraform job
 
 The first template shows how to build an environment from Terraform configuration, and run

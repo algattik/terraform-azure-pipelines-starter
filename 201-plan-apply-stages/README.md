@@ -97,3 +97,6 @@ You can rerun the Plan stage directly in the pipeline view to produce an updated
   pipelines (stages cannot be conditioned on the outputs of previous stages).
   You could cancel the pipeline (through the REST API) in that case, but that
   would prevent extending the pipeline to include activities beyond Terraform.
+* The next template, [301-deploy-agent-vms](../301-deploy-agent-vms) demonstrates
+  how you can use Terraform to manage infrastructure used for the build itself,
+  such as build agent VMs.
