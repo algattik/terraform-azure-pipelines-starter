@@ -12,5 +12,6 @@ module "devops-agent" {
   az_devops_agent_sshkeys = var.az_devops_agent_sshkeys
   az_devops_agent_vm_size = var.az_devops_agent_vm_size
   az_devops_agent_vm_count = var.az_devops_agent_vm_count
+  az_devops_agent_vm_shutdown_time = var.az_devops_agent_vm_shutdown_time
 }
 

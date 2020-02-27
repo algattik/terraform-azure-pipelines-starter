@@ -16,11 +16,6 @@ az_devops_agents_per_vm="$4"
 set -euo pipefail
 
 
-#FIXME
-set -x
-
-
-
 echo "start"
 
 echo "install Ubuntu packages"
@@ -79,6 +74,15 @@ for agent_num in $(seq 1 $az_devops_agents_per_vm); do
     echo "extracted"
     ./bin/installdependencies.sh
     echo "dependencies installed"
+
+    if test -e .agent; then
+      echo "attempting to uninstall agent"
+      ./svc.sh stop || true
+      ./svc.sh uninstall || true
+      sudo -u azuredevopsuser ./config.sh remove --unattended --auth pat --token "$az_devops_pat" || true
+    fi
+
+    echo "running installation"
     sudo -u azuredevopsuser ./config.sh --unattended --url "$az_devops_url" --auth pat --token "$az_devops_pat" --pool "$az_devops_agent_pool" --agent "$agent_id" --acceptTeeEula --work ./_work --runAsService
     echo "configuration done"
     ./svc.sh install

@@ -53,6 +53,14 @@ stages:
       parameters:
         TerraformDirectory: 301-deploy-agent-vms/terraform
 
+    - task: AzureCLI@1
+      displayName: Start agents
+      inputs:
+        azureSubscription: ${{ parameters.TerraformEnvironmentServiceConnection }}
+        scriptLocation: inlineScript
+        inlineScript: |
+          env
+
   - job: DummySampleJob
     displayName: Run Agent job
     dependsOn: ReadTerraform

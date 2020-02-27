@@ -22,3 +22,4 @@ stages:
       TF_VAR_az_devops_url: $(System.TeamFoundationCollectionUri)
       TF_VAR_az_devops_pat: $(AGENT_POOL_MANAGE_PAT_TOKEN)
       TF_VAR_az_devops_agent_pool: starterpool
+      TF_VAR_az_devops_agent_vm_shutdown_time: 2300

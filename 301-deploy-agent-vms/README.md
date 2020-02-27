@@ -14,7 +14,9 @@ You can extend the definition with your custom infrastructure, such as Web Apps.
 ### Creating an agent pool
 
 In your Azure DevOps project settings, [create an Agent pool](https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/pools-queues).
-Name the pool `starterpool`.
+Name the pool `starterpool` (if you want to use a different name, change the value in [azure-pipelines.yml](azure-pipelines.yml)).
+
+starterpool
 
 ### Creating a PAT token
 
@@ -32,3 +34,10 @@ Make the variable secret using the padlock icon.
 To use the template, follow the section
 [How to use the templates](/README.md#how-to-use-the-templates)
 in the main README file.
+
+### Automatic shutdown of agents
+
+The pipeline configures the agent VMs to automatically shutdown daily at 23:00 UTC.
+To use a different schedule, change `TF_VAR_az_devops_agent_vm_shutdown_time`
+in [azure-pipelines.yml](azure-pipelines.yml),
+or remove that line completely to disable automatic shutdown.

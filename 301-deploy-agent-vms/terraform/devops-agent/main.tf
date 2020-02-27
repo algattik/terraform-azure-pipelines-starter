@@ -162,3 +162,26 @@ resource "azurerm_virtual_machine_extension" "devops" {
   })
   count = var.az_devops_agent_vm_count
 }
+
+resource "azurerm_template_deployment" "devops_shutdown" {
+  name = format("shutdown-vm-%03d", count.index + 1)
+  resource_group_name = azurerm_resource_group.devops.name
+
+  template_body = file("${path.module}/shutdown_schedule_arm_template.json")
+
+  parameters = {
+    name = "shutdown-computevm-${azurerm_virtual_machine.devops[count.index].name}"
+    shutdown_enabled = var.az_devops_agent_vm_shutdown_time != null ? "Enabled" : "Disabled"
+    shutdown_time = coalesce(var.az_devops_agent_vm_shutdown_time, "0000")
+    vm_id = azurerm_virtual_machine.devops[count.index].id
+  }
+
+  depends_on = [
+    azurerm_virtual_machine.devops
+  ]
+
+  deployment_mode = "Incremental"
+
+  count = var.az_devops_agent_vm_count
+}
+

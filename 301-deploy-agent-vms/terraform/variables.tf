@@ -61,3 +61,9 @@ variable "az_devops_agents_per_vm" {
   description = "Number of Azure DevOps agents spawned per VM. Agents will be named with a random prefix."
   default = 4
 }
+
+variable "az_devops_agent_vm_shutdown_time" {
+  type    = string
+  description = "UTC Time at which to shutdown the agent VMs daily, for example '2000' for 8 PM. If null, no shutdown will configured."
+  default = null
+}
