@@ -61,7 +61,7 @@ stages:
         azureSubscription: Terraform
         scriptLocation: inlineScript
         inlineScript: |
-          env
+          az vm start --ids $(echo $OUTPUTS_AGENT_VM_IDS  | jq -r '.[]') --debug --verbose
 
   - job: DummySampleJob
     displayName: Run Agent job
