@@ -56,7 +56,7 @@ stages:
     - task: AzureCLI@1
       displayName: Start agents
       inputs:
-        azureSubscription: ${{ parameters.TerraformEnvironmentServiceConnection }}
+        azureSubscription: Terraform
         scriptLocation: inlineScript
         inlineScript: |
           env

@@ -201,7 +201,7 @@ At this stage you will have a new resource group deployed named `rg-starterterra
 
 The pipeline automatically exports Terraform outputs into pipeline variables.
 
-The pipeline contains a sample job that consumes those variables:
+The pipelines contain a sample job that consumes those variables:
 
 ![output variables](/docs/images/terraform_starter/output_variables.png)
 
