@@ -4,6 +4,10 @@
 set -euo pipefail
 
 
+#FIXME
+set -x
+
+
 echo MSG1
 echo MSG2 >&2
 
@@ -65,9 +69,6 @@ host_id=$(cat host_uuid.txt)
 
 
 echo "Creating agent pool if needed, and validating PAT token"
-
-#FIXME
-set -x
 
 if ! curl -fu ":$az_devops_pat" "$az_devops_url/_apis/distributedtask/pools?poolName=$az_devops_agent_pool&api-version=5.1" | jq -e '.count>=0'; then
     echo "Creating agent pool"
