@@ -24,7 +24,9 @@ echo "install Ubuntu packages"
 # To make it easier for build and release pipelines to run apt-get,
 # configure apt to not require confirmation (assume the -y argument by default)
 export DEBIAN_FRONTEND=noninteractive
-echo "APT::Get::Assume-Yes \"true\";" > /etc/apt/apt.conf.d/90assumeyes
+echo 'APT::Get::Assume-Yes "true";' > /etc/apt/apt.conf.d/90assumeyes
+echo 'Dpkg::Progress-Fancy "1";' > /etc/apt/apt.conf.d/99progressbar
+
 
 apt-get update
 apt-get install -y --no-install-recommends \
@@ -32,13 +34,6 @@ apt-get install -y --no-install-recommends \
         jq \
         apt-transport-https \
         docker.io
-
-
-echo "Creating agent pool if needed, and validating PAT token"
-
-if ! curl -fu ":$az_devops_pat" "$az_devops_url/_apis/distributedtask/pools?poolName=mypool3&api-version=5.1 | jq -e '.count>=0'; then
-    curl -fu ":$az_devops_pat" "$az_devops_url/_apis/distributedtask/pools?api-version=5.1 -H "Content-Type:application/json" -d '{"name":"'"$az_devops_agent_pool"'"}'
-fi
 
 
 echo "Allowing agent to run docker"
@@ -67,6 +62,15 @@ if ! test -e "host_uuid.txt"; then
   mv host_uuid.txt.tmp host_uuid.txt
 fi
 host_id=$(cat host_uuid.txt)
+
+
+echo "Creating agent pool if needed, and validating PAT token"
+
+if ! curl -fu ":$az_devops_pat" "$az_devops_url/_apis/distributedtask/pools?poolName=mypool3&api-version=5.1 | jq -e '.count>=0'; then
+    echo "Creating agent pool"
+    curl -fu ":$az_devops_pat" "$az_devops_url/_apis/distributedtask/pools?api-version=5.1 -H "Content-Type:application/json" -d '{"name":"'"$az_devops_agent_pool"'"}'
+fi
+
 
 for agent_num in $(seq 1 $az_devops_agents_per_vm); do
   agent_dir="agent-$agent_num"
