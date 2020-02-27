@@ -1,5 +1,17 @@
 #!/bin/sh
 
+
+test -n "$1" || { echo "The argument az_devops_url must be provided"; exit 1; }
+az_devops_url="$1"
+[[ "$az_devops_url" == */ ]] || { echo "The argument az_devops_url must end with /"; exit 1; }
+test -n "$2" || { echo "The argument az_devops_pat must be provided"; exit 1; }
+az_devops_pat="$2"
+test -n "$3" || { echo "The argument az_devops_agent_pool must be provided"; exit 1; }
+az_devops_agent_pool="$3"
+test -n "$4" || { echo "The argument az_devops_agents_per_vm must be provided"; exit 1; }
+az_devops_agents_per_vm="$4"
+
+
 #strict mode, fail on error
 set -euo pipefail
 
@@ -7,18 +19,6 @@ set -euo pipefail
 #FIXME
 set -x
 
-
-echo MSG1
-echo MSG2 >&2
-
-test -n "$1" || "The argument az_devops_url must be provided"
-az_devops_url="$1"
-test -n "$2" || "The argument az_devops_pat must be provided"
-az_devops_pat="$2"
-test -n "$3" || "The argument az_devops_agent_pool must be provided"
-az_devops_agent_pool="$3"
-test -n "$4" || "The argument az_devops_agents_per_vm must be provided"
-az_devops_agents_per_vm="$4"
 
 
 echo "start"
@@ -70,11 +70,10 @@ host_id=$(cat host_uuid.txt)
 
 echo "Creating agent pool if needed, and validating PAT token"
 
-if ! curl -fu ":$az_devops_pat" "$az_devops_url/_apis/distributedtask/pools?poolName=$az_devops_agent_pool&api-version=5.1" | jq -e '.count>=0'; then
+if ! curl -fu ":$az_devops_pat" "${az_devops_url}_apis/distributedtask/pools?poolName=$az_devops_agent_pool&api-version=5.1" | jq -e '.count>0'; then
     echo "Creating agent pool"
-    curl -fu ":$az_devops_pat" "$az_devops_url/_apis/distributedtask/pools?api-version=5.1" -H "Content-Type:application/json" -d '{"name":"'"$az_devops_agent_pool"'"}'
+    curl -fu ":$az_devops_pat" "${az_devops_url}_apis/distributedtask/pools?api-version=5.1" -H "Content-Type:application/json" -d '{"name":"'"$az_devops_agent_pool"'"}'
 fi
-exit 1
 
 for agent_num in $(seq 1 $az_devops_agents_per_vm); do
   agent_dir="agent-$agent_num"
@@ -82,7 +81,7 @@ for agent_num in $(seq 1 $az_devops_agents_per_vm); do
   pushd "$agent_dir"
     agent_id="${agent_num}_${host_id}"
     echo "installing agent $agent_id"
-    tar zxvf ../agent_package.tar.gz
+    tar zxf ../agent_package.tar.gz
     chmod -R 777 .
     echo "extracted"
     ./bin/installdependencies.sh
